@@ -1,0 +1,22 @@
+# Imagem de referência p/ CI e onboarding. Dev diário é nativo + compose.
+# Todas as bases/imagens com licenças permissivas (MIT/Apache-2.0/BSD).
+FROM rust:1.98-bookworm
+
+ENV DEBIAN_FRONTEND=noninteractive \
+  FNM_DIR=/usr/local/share/fnm \
+  PATH="/usr/local/share/fnm:$HOME/.local/bin:$PATH"
+
+# Node 20 LTS via nodesource (imagem CI, sem fnm para determinismo)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+  ca-certificates curl gnupg pkg-config build-essential libssl-dev \
+  libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev \
+  postgresql-client \
+ && mkdir -p /etc/apt/keyrings \
+ && curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg \
+ && echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_20.x nodistro main" | tee /etc/apt/sources.list.d/nodesource.list \
+ && apt-get update && apt-get install -y --no-install-recommends nodejs \
+ && rm -rf /var/lib/apt/lists/* \
+ && cargo install sqlx-cli --no-default-features --features postgres \
+ && node --version && npm --version && sqlx --version
+
+WORKDIR /workspace
