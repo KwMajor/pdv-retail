@@ -12,7 +12,7 @@ use uuid::Uuid;
 use crate::errors::AppError;
 use crate::middleware::TenantContext;
 use crate::models::{User, UserRole};
-use crate::repositories::PgUserRepository;
+use crate::repositories::{PgUserRepository, UserRepository};
 use crate::services::{CreateUserError, CreateUserInput, create_user};
 
 /// Payload de criação. Deliberadamente SEM `store_id` (DoD: implícito do criador).
@@ -46,6 +46,24 @@ impl From<User> for UserResponse {
             is_active: user.is_active,
         }
     }
+}
+
+/// `GET /api/v1/me` — identidade do token (o desktop revalida a sessão
+/// restaurada do cofre aqui; token expirado nem chega: 401 do extractor).
+pub async fn me_handler(
+    ctx: TenantContext,
+    axum::extract::State(state): axum::extract::State<crate::AppState>,
+) -> Result<axum::Json<UserResponse>, AppError> {
+    let pool = state
+        .pool
+        .clone()
+        .ok_or_else(|| AppError::Internal("banco não configurado".to_string()))?;
+    let user = crate::repositories::PgUserRepository::new(pool)
+        .find_by_id(ctx.store_id, ctx.user_id)
+        .await?
+        .filter(|u| u.is_active)
+        .ok_or(AppError::NotFound)?;
+    Ok(axum::Json(UserResponse::from(user)))
 }
 
 fn service_error(e: CreateUserError) -> AppError {

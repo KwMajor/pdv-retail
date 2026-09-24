@@ -1,0 +1,30 @@
+[package]
+name = "pdv-desktop"
+version = "0.1.0"
+edition = "2021"
+
+# Núcleo testável sem Tauri: `cargo test` exercita o cofre de verdade.
+# A feature `tauri-app` liga os commands IPC (exige os pré-requisitos do
+# Tauri no SO: webkit2gtk etc. — ver tauri.conf.json).
+[features]
+default = []
+tauri-app = ["dep:tauri"]
+
+[dependencies]
+# Cofre nativo do SO (todas MIT/Apache-2.0, compatíveis com SaaS closed-source).
+# ATENÇÃO: o `keyring` 3.x vem com store MOCK por padrão; é preciso ligar o
+# backend persistente (keyutils como cache + Secret Service p/ persistência)
+# e sessão D-Bus criptografada — sem isso NADA persiste entre processos.
+keyring = { version = "3", features = ["linux-native-sync-persistent", "crypto-rust"] }
+thiserror = "2"
+serde = { version = "1", features = ["derive"] }
+tauri = { version = "2", optional = true }
+
+[lib]
+name = "pdv_desktop"
+crate-type = ["lib"]
+
+[[bin]]
+name = "pdv-desktop"
+path = "src/main.rs"
+required-features = ["tauri-app"]

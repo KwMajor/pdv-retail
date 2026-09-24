@@ -270,3 +270,31 @@ async fn token_adulterado_cashier_para_manager_barrado_com_401() {
     c[2] = g[2];
     assert_eq!(ping(&c.join("."), &p).await, StatusCode::UNAUTHORIZED);
 }
+
+#[tokio::test]
+async fn me_devolve_identidade_do_token_para_o_desktop() {
+    // O PDV restaura a sessão do cofre e revalida aqui (Task 2.4 `restore()`).
+    let p = pool().await;
+    let store = mk_store(&p, &uniq("me")).await;
+    let email = mk_user(&p, &store, UserRole::Cashier, "segredo-123").await;
+    let (_, login) = corpo(
+        app_with_db(p.clone()).oneshot(post_login(Some(&store), &email, "segredo-123")).await.unwrap(),
+    )
+    .await;
+    let token = login["token"].as_str().unwrap();
+    let res = app_with_db(p.clone())
+        .oneshot(
+            Request::builder()
+                .uri("/api/v1/me")
+                .header("authorization", format!("Bearer {token}"))
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    let (status, json) = corpo(res).await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(json["email"], email);
+    assert_eq!(json["store_id"], store);
+    assert!(json.get("password_hash").is_none());
+}

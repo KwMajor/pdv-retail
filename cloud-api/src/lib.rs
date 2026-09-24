@@ -39,6 +39,7 @@ pub fn app_router(state: AppState) -> Router {
         .route("/ready", get(controllers::health::ready))
         .route("/api/v1/ping", get(controllers::ping::ping))
         .route("/api/v1/users", post(controllers::users::create_user_handler))
+        .route("/api/v1/me", get(controllers::users::me_handler))
         .route("/api/v1/auth/login", post(controllers::auth::login_handler))
         .with_state(state)
 }
