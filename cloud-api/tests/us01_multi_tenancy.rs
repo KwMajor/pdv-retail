@@ -123,7 +123,9 @@ async fn rollback_to(tx: &mut Tx<'_>, name: &str) {
 // --- factories --------------------------------------------------------------
 
 async fn mk_store(tx: &mut Tx<'_>, tag: &str) -> String {
-    sqlx::query_scalar("INSERT INTO store(name, cnpj) VALUES ($1, $2) RETURNING id::text")
+    sqlx::query_scalar(
+        "INSERT INTO store_settings(name, cnpj) VALUES ($1, $2) RETURNING id::text",
+    )
         .bind(format!("Loja {tag}"))
         .bind(format!("cnpj-{tag}"))
         .fetch_one(&mut **tx)
@@ -184,7 +186,7 @@ async fn store_create_ok_com_timestamps() {
     let mut tx = pool.begin().await.unwrap();
     let tag = uniq("s");
     let row: (String, bool, bool) = sqlx::query_as(
-        "INSERT INTO store(name, cnpj) VALUES ($1, $2) RETURNING id::text, created_at IS NOT NULL, updated_at IS NOT NULL",
+        "INSERT INTO store_settings(name, cnpj) VALUES ($1, $2) RETURNING id::text, created_at IS NOT NULL, updated_at IS NOT NULL",
     )
     .bind(format!("Loja {tag}"))
     .bind(format!("cnpj-{tag}"))
@@ -203,7 +205,7 @@ async fn store_cnpj_duplicado_falha() {
     let tag = uniq("dup");
     mk_store(&mut tx, &tag).await;
     let sp = savepoint(&mut tx).await;
-    let err = sqlx::query("INSERT INTO store(name, cnpj) VALUES ('Outra', $1)")
+    let err = sqlx::query("INSERT INTO store_settings(name, cnpj) VALUES ('Outra', $1)")
         .bind(format!("cnpj-{tag}"))
         .execute(&mut *tx)
         .await
@@ -217,7 +219,7 @@ async fn store_cnpj_duplicado_falha() {
 async fn store_nome_nulo_falha() {
     let pool = fresh_pool().await;
     let mut tx = pool.begin().await.unwrap();
-    let err = sqlx::query("INSERT INTO store(name, cnpj) VALUES (NULL, 'x')")
+    let err = sqlx::query("INSERT INTO store_settings(name, cnpj) VALUES (NULL, 'x')")
         .execute(&mut *tx)
         .await
         .unwrap_err();
@@ -402,7 +404,7 @@ async fn product_updated_at_atualiza_no_update() {
     let pool = fresh_pool().await;
     let tag = uniq("ts");
     let store: String =
-        sqlx::query_scalar("INSERT INTO store(name, cnpj) VALUES ($1, $2) RETURNING id::text")
+        sqlx::query_scalar("INSERT INTO store_settings(name, cnpj) VALUES ($1, $2) RETURNING id::text")
             .bind(format!("Loja {tag}"))
             .bind(format!("cnpj-{tag}"))
             .fetch_one(&pool)
@@ -445,7 +447,7 @@ async fn product_updated_at_atualiza_no_update() {
         .execute(&pool)
         .await
         .unwrap();
-    sqlx::query("DELETE FROM store WHERE id = $1::uuid")
+    sqlx::query("DELETE FROM store_settings WHERE id = $1::uuid")
         .bind(&store)
         .execute(&pool)
         .await
@@ -646,8 +648,9 @@ async fn sale_item_snapshot_desacoplado_do_produto() {
     let sale = mk_sale(&mut tx, &store).await;
     // Item congela fiscal DIFERENTE do atual (ex: regra antiga): permitido.
     sqlx::query(
-        "INSERT INTO sale_item(sale_id, product_id, quantity, unit_price, total, ncm_code, cfop, icms_rate) VALUES ($1::uuid, $2::uuid, 1, 10, 10, '99999999', '6102', 4)",
+        "INSERT INTO sale_item(store_id, sale_id, product_id, quantity, unit_price, total, ncm_code, cfop, icms_rate) VALUES ($1::uuid, $2::uuid, $3::uuid, 1, 10, 10, '99999999', '6102', 4)",
     )
+    .bind(&store)
     .bind(&sale)
     .bind(&prod)
     .execute(&mut *tx)
@@ -678,8 +681,9 @@ async fn sale_item_quantidade_positiva() {
     for qty in ["0", "-2"] {
         let sp = savepoint(&mut tx).await;
         let err = sqlx::query(&format!(
-            "INSERT INTO sale_item(sale_id, product_id, quantity, unit_price, total) VALUES ($1::uuid, $2::uuid, {qty}, 10, 10)"
+            "INSERT INTO sale_item(store_id, sale_id, product_id, quantity, unit_price, total) VALUES ($1::uuid, $2::uuid, $3::uuid, {qty}, 10, 10)"
         ))
+        .bind(&store)
         .bind(&sale)
         .bind(&prod)
         .execute(&mut *tx)
@@ -708,7 +712,8 @@ async fn payment_metodos_validos_e_invalido() {
         } else {
             None
         };
-        sqlx::query("INSERT INTO payment(sale_id, method, amount, tendered_amount) VALUES ($1::uuid, $2, 10, $3::numeric)")
+        sqlx::query("INSERT INTO payment(store_id, sale_id, method, amount, tendered_amount) VALUES ($1::uuid, $2::uuid, $3, 10, $4::numeric)")
+            .bind(&store)
             .bind(&sale)
             .bind(method)
             .bind(tendered)
@@ -718,8 +723,9 @@ async fn payment_metodos_validos_e_invalido() {
     }
     let sp = savepoint(&mut tx).await;
     let err = sqlx::query(
-        "INSERT INTO payment(sale_id, method, amount) VALUES ($1::uuid, 'bitcoin', 10)",
+        "INSERT INTO payment(store_id, sale_id, method, amount) VALUES ($1::uuid, $2::uuid, 'bitcoin', 10)",
     )
+    .bind(&store)
     .bind(&sale)
     .execute(&mut *tx)
     .await
@@ -738,7 +744,8 @@ async fn payment_dinheiro_regras_do_troco() {
     // Sem valor entregue: falha.
     let sp = savepoint(&mut tx).await;
     let err =
-        sqlx::query("INSERT INTO payment(sale_id, method, amount) VALUES ($1::uuid, 'cash', 10)")
+        sqlx::query("INSERT INTO payment(store_id, sale_id, method, amount) VALUES ($1::uuid, $2::uuid, 'cash', 10)")
+            .bind(&store)
             .bind(&sale)
             .execute(&mut *tx)
             .await
@@ -748,8 +755,9 @@ async fn payment_dinheiro_regras_do_troco() {
     // Entregue menor que a conta: falha.
     let sp = savepoint(&mut tx).await;
     let err = sqlx::query(
-        "INSERT INTO payment(sale_id, method, amount, tendered_amount) VALUES ($1::uuid, 'cash', 10, 9.99)",
+        "INSERT INTO payment(store_id, sale_id, method, amount, tendered_amount) VALUES ($1::uuid, $2::uuid, 'cash', 10, 9.99)",
     )
+    .bind(&store)
     .bind(&sale)
     .execute(&mut *tx)
     .await
@@ -759,8 +767,9 @@ async fn payment_dinheiro_regras_do_troco() {
     // Exato e com troco: ok.
     for tendered in ["10.00", "20.00"] {
         sqlx::query(
-            "INSERT INTO payment(sale_id, method, amount, tendered_amount) VALUES ($1::uuid, 'cash', 10, $2::numeric)",
+            "INSERT INTO payment(store_id, sale_id, method, amount, tendered_amount) VALUES ($1::uuid, $2::uuid, 'cash', 10, $3::numeric)",
         )
+        .bind(&store)
         .bind(&sale)
         .bind(tendered)
         .execute(&mut *tx)
@@ -776,14 +785,16 @@ async fn payment_valor_zero_falha_pix_sem_troco_ok() {
     let mut tx = pool.begin().await.unwrap();
     let store = mk_store(&mut tx, &uniq("px")).await;
     let sale = mk_sale(&mut tx, &store).await;
-    sqlx::query("INSERT INTO payment(sale_id, method, amount) VALUES ($1::uuid, 'pix', 10)")
+    sqlx::query("INSERT INTO payment(store_id, sale_id, method, amount) VALUES ($1::uuid, $2::uuid, 'pix', 10)")
+        .bind(&store)
         .bind(&sale)
         .execute(&mut *tx)
         .await
         .unwrap();
     let sp = savepoint(&mut tx).await;
     let err =
-        sqlx::query("INSERT INTO payment(sale_id, method, amount) VALUES ($1::uuid, 'pix', 0)")
+        sqlx::query("INSERT INTO payment(store_id, sale_id, method, amount) VALUES ($1::uuid, $2::uuid, 'pix', 0)")
+            .bind(&store)
             .bind(&sale)
             .execute(&mut *tx)
             .await
@@ -1058,11 +1069,16 @@ async fn isolamento_produtos_filtrados_por_loja() {
 async fn isolamento_toda_tabela_operacional_tem_store_id_not_null() {
     let pool = fresh_pool().await;
     let mut tx = pool.begin().await.unwrap();
+    // Task 1.1: todas as operacionais com store_id UUID NOT NULL + FK RESTRICT.
+    // Inclui as 8 principais (store_settings é a raiz e não tem store_id).
     for table in [
         "user",
         "product",
         "customer",
         "sale",
+        "sale_item",
+        "stock",
+        "payment",
         "stock_movement",
         "audit_log",
         "fiscal_queue",
@@ -1079,5 +1095,258 @@ async fn isolamento_toda_tabela_operacional_tem_store_id_not_null() {
             "tabela {table}: store_id precisa ser NOT NULL"
         );
     }
+    tx.rollback().await.unwrap();
+}
+
+// --- Task 1.1 DoD explícito --------------------------------------------------
+// Estes testes espelham 1:1 os critérios de aceite da Task 1.1.
+
+#[tokio::test]
+async fn task11_tabelas_principais_existem() {
+    let pool = fresh_pool().await;
+    let mut tx = pool.begin().await.unwrap();
+    for table in [
+        "store_settings",
+        "user",
+        "product",
+        "customer",
+        "sale",
+        "sale_item",
+        "stock",
+        "payment",
+    ] {
+        let n: i64 = sqlx::query_scalar(
+            "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = 'public' AND table_name = $1",
+        )
+        .bind(table)
+        .fetch_one(&mut *tx)
+        .await
+        .unwrap();
+        assert_eq!(n, 1, "tabela principal {table} não existe (001_initial_schema.sql)");
+    }
+    tx.rollback().await.unwrap();
+}
+
+#[tokio::test]
+async fn task11_store_id_fk_restrict_para_store_settings() {
+    let pool = fresh_pool().await;
+    let mut tx = pool.begin().await.unwrap();
+    // Toda operacional: store_id UUID + FK -> store_settings(id) ON DELETE RESTRICT.
+    let rows: Vec<(String, String)> = sqlx::query_as(
+        "SELECT tc.table_name, rc.delete_rule FROM information_schema.table_constraints tc \
+         JOIN information_schema.key_column_usage kcu \
+           ON tc.constraint_name = kcu.constraint_name AND tc.table_schema = kcu.table_schema \
+         JOIN information_schema.constraint_column_usage ccu \
+           ON ccu.constraint_name = tc.constraint_name AND ccu.table_schema = tc.table_schema \
+         JOIN information_schema.referential_constraints rc \
+           ON rc.constraint_name = tc.constraint_name AND rc.constraint_schema = tc.table_schema \
+         WHERE tc.constraint_type = 'FOREIGN KEY' AND kcu.column_name = 'store_id' \
+           AND ccu.table_name = 'store_settings' AND rc.delete_rule = 'RESTRICT'",
+    )
+    .fetch_all(&mut *tx)
+    .await
+    .unwrap();
+    let tabelas: Vec<String> = rows.into_iter().map(|(t, _)| t).collect();
+    for table in [
+        "user",
+        "product",
+        "customer",
+        "sale",
+        "sale_item",
+        "stock",
+        "payment",
+    ] {
+        assert!(
+            tabelas.contains(&table.to_string()),
+            "tabela {table} sem FK store_id -> store_settings(id) ON DELETE RESTRICT"
+        );
+    }
+    tx.rollback().await.unwrap();
+}
+
+#[tokio::test]
+async fn task11_soft_delete_product_e_user() {
+    let pool = fresh_pool().await;
+    let mut tx = pool.begin().await.unwrap();
+    for table in ["user", "product"] {
+        let row: (String, String) = sqlx::query_as(
+            "SELECT data_type, column_default FROM information_schema.columns \
+             WHERE table_schema = 'public' AND table_name = $1 AND column_name = 'is_active'",
+        )
+        .bind(table)
+        .fetch_one(&mut *tx)
+        .await
+        .unwrap_or_else(|_| panic!("tabela {table} sem coluna is_active"));
+        assert_eq!(row.0, "boolean", "tabela {table}: is_active deve ser BOOLEAN");
+        assert!(
+            row.1.contains("true"),
+            "tabela {table}: is_active deve ter DEFAULT TRUE, obteve: {}",
+            row.1
+        );
+    }
+    tx.rollback().await.unwrap();
+}
+
+#[tokio::test]
+async fn task11_sale_item_tax_snapshot_varchar_decimal() {
+    let pool = fresh_pool().await;
+    let mut tx = pool.begin().await.unwrap();
+    let rows: Vec<(String, String)> = sqlx::query_as(
+        "SELECT column_name, data_type FROM information_schema.columns \
+         WHERE table_schema = 'public' AND table_name = 'sale_item' \
+           AND column_name IN ('ncm_code', 'cfop', 'icms_rate')",
+    )
+    .fetch_all(&mut *tx)
+    .await
+    .unwrap();
+    assert_eq!(rows.len(), 3, "sale_item sem colunas do Tax Snapshot");
+    for (col, typ) in rows {
+        match col.as_str() {
+            // VARCHAR aparece como character varying no information_schema.
+            "ncm_code" | "cfop" => assert_eq!(
+                typ, "character varying",
+                "{col} deve ser VARCHAR, obteve: {typ}"
+            ),
+            // DECIMAL é alias do NUMERIC no Postgres.
+            "icms_rate" => assert_eq!(typ, "numeric", "{col} deve ser DECIMAL, obteve: {typ}"),
+            _ => unreachable!(),
+        }
+    }
+    tx.rollback().await.unwrap();
+}
+
+#[tokio::test]
+async fn task11_qa_edge_delete_loja_com_vendas_bloqueado() {
+    // Cenário QA Edge Case: DELETE FROM STORE_SETTINGS com vendas vinculadas
+    // deve ser bloqueado (ON DELETE RESTRICT).
+    let pool = fresh_pool().await;
+    let mut tx = pool.begin().await.unwrap();
+    let store = mk_store(&mut tx, &uniq("edge")).await;
+    mk_sale(&mut tx, &store).await;
+    let sp = savepoint(&mut tx).await;
+    let err = sqlx::query("DELETE FROM store_settings WHERE id = $1::uuid")
+        .bind(&store)
+        .execute(&mut *tx)
+        .await
+        .unwrap_err();
+    let msg = err.to_string();
+    assert!(
+        msg.contains("foreign") || msg.contains("violates") || msg.contains("restrict"),
+        "esperava bloqueio RESTRICT, obteve: {msg}"
+    );
+    rollback_to(&mut tx, &sp).await;
+    // Sem vendas vinculadas, a exclusão passa (loja efêmera de teste).
+    let lonely = mk_store(&mut tx, &uniq("lonely")).await;
+    let n = sqlx::query("DELETE FROM store_settings WHERE id = $1::uuid")
+        .bind(&lonely)
+        .execute(&mut *tx)
+        .await
+        .unwrap()
+        .rows_affected();
+    assert_eq!(n, 1);
+    tx.rollback().await.unwrap();
+}
+
+#[tokio::test]
+async fn stock_saldo_exige_store_id_e_unico_por_produto() {
+    let pool = fresh_pool().await;
+    let mut tx = pool.begin().await.unwrap();
+    let store = mk_store(&mut tx, &uniq("stk")).await;
+    let prod = mk_product(&mut tx, &store, &uniq("stk")).await;
+    // Sem store_id: falha (NOT NULL).
+    let sp = savepoint(&mut tx).await;
+    let err = sqlx::query(
+        "INSERT INTO stock(store_id, product_id, quantity) VALUES (NULL, $1::uuid, 5)",
+    )
+    .bind(&prod)
+    .execute(&mut *tx)
+    .await
+    .unwrap_err();
+    assert!(err.to_string().contains("null"));
+    rollback_to(&mut tx, &sp).await;
+    // Inserção ok.
+    sqlx::query(
+        "INSERT INTO stock(store_id, product_id, quantity) VALUES ($1::uuid, $2::uuid, 5)",
+    )
+    .bind(&store)
+    .bind(&prod)
+    .execute(&mut *tx)
+    .await
+    .unwrap();
+    // Duplicata (mesma loja + produto): falha (UNIQUE).
+    let sp = savepoint(&mut tx).await;
+    let err = sqlx::query(
+        "INSERT INTO stock(store_id, product_id, quantity) VALUES ($1::uuid, $2::uuid, 1)",
+    )
+    .bind(&store)
+    .bind(&prod)
+    .execute(&mut *tx)
+    .await
+    .unwrap_err();
+    assert!(err.to_string().contains("duplicate") || err.to_string().contains("unique"));
+    rollback_to(&mut tx, &sp).await;
+    tx.rollback().await.unwrap();
+}
+
+#[tokio::test]
+async fn sale_item_e_payment_exigem_store_id_e_bloqueiam_cross_tenant() {
+    let pool = fresh_pool().await;
+    let mut tx = pool.begin().await.unwrap();
+    let a = mk_store(&mut tx, &uniq("ta")).await;
+    let b = mk_store(&mut tx, &uniq("tb")).await;
+    let prod_a = mk_product(&mut tx, &a, &uniq("pa")).await;
+    let sale_a = mk_sale(&mut tx, &a).await;
+    // Sem store_id: falha.
+    let sp = savepoint(&mut tx).await;
+    let err = sqlx::query(
+        "INSERT INTO sale_item(store_id, sale_id, product_id, quantity, unit_price, total) VALUES (NULL, $1::uuid, $2::uuid, 1, 10, 10)",
+    )
+    .bind(&sale_a)
+    .bind(&prod_a)
+    .execute(&mut *tx)
+    .await
+    .unwrap_err();
+    assert!(err.to_string().contains("null"));
+    rollback_to(&mut tx, &sp).await;
+    let sp = savepoint(&mut tx).await;
+    let err = sqlx::query(
+        "INSERT INTO payment(store_id, sale_id, method, amount) VALUES (NULL, $1::uuid, 'pix', 10)",
+    )
+    .bind(&sale_a)
+    .execute(&mut *tx)
+    .await
+    .unwrap_err();
+    assert!(err.to_string().contains("null"));
+    rollback_to(&mut tx, &sp).await;
+    // Cross-tenant (venda da loja A com store_id da loja B): FK composta barra.
+    let sp = savepoint(&mut tx).await;
+    let err = sqlx::query(
+        "INSERT INTO sale_item(store_id, sale_id, product_id, quantity, unit_price, total) VALUES ($1::uuid, $2::uuid, $3::uuid, 1, 10, 10)",
+    )
+    .bind(&b)
+    .bind(&sale_a)
+    .bind(&prod_a)
+    .execute(&mut *tx)
+    .await
+    .unwrap_err();
+    assert!(
+        err.to_string().contains("foreign") || err.to_string().contains("violates"),
+        "cross-tenant em sale_item deveria falhar, obteve: {err}"
+    );
+    rollback_to(&mut tx, &sp).await;
+    let sp = savepoint(&mut tx).await;
+    let err = sqlx::query(
+        "INSERT INTO payment(store_id, sale_id, method, amount) VALUES ($1::uuid, $2::uuid, 'pix', 10)",
+    )
+    .bind(&b)
+    .bind(&sale_a)
+    .execute(&mut *tx)
+    .await
+    .unwrap_err();
+    assert!(
+        err.to_string().contains("foreign") || err.to_string().contains("violates"),
+        "cross-tenant em payment deveria falhar, obteve: {err}"
+    );
+    rollback_to(&mut tx, &sp).await;
     tx.rollback().await.unwrap();
 }

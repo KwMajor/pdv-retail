@@ -1,0 +1,84 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE sale SET status = $3 WHERE store_id = $1 AND id = $2\n             RETURNING id, store_id, customer_id, anonymous_cpf_cnpj, status, subtotal, discount, total, change_amount, created_by, created_at",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "store_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 2,
+        "name": "customer_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 3,
+        "name": "anonymous_cpf_cnpj",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 4,
+        "name": "status",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 5,
+        "name": "subtotal",
+        "type_info": "Numeric"
+      },
+      {
+        "ordinal": 6,
+        "name": "discount",
+        "type_info": "Numeric"
+      },
+      {
+        "ordinal": 7,
+        "name": "total",
+        "type_info": "Numeric"
+      },
+      {
+        "ordinal": 8,
+        "name": "change_amount",
+        "type_info": "Numeric"
+      },
+      {
+        "ordinal": 9,
+        "name": "created_by",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 10,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Varchar"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      true,
+      true,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false
+    ]
+  },
+  "hash": "4d78b0c2ba5caf43939122e89fcbd932006ac185a0deb8013096ef45d868eee2"
+}

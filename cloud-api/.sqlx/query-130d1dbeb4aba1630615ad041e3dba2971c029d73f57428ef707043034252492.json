@@ -1,0 +1,105 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO sale_item(store_id, sale_id, product_id, quantity, unit_price, discount, total, ncm_code, cest, cfop, icms_origin, icms_rate)\n             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)\n             RETURNING id, store_id, sale_id, product_id, quantity, unit_price, discount, total, ncm_code, cest, cfop, icms_origin, icms_rate",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "store_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 2,
+        "name": "sale_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 3,
+        "name": "product_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 4,
+        "name": "quantity",
+        "type_info": "Numeric"
+      },
+      {
+        "ordinal": 5,
+        "name": "unit_price",
+        "type_info": "Numeric"
+      },
+      {
+        "ordinal": 6,
+        "name": "discount",
+        "type_info": "Numeric"
+      },
+      {
+        "ordinal": 7,
+        "name": "total",
+        "type_info": "Numeric"
+      },
+      {
+        "ordinal": 8,
+        "name": "ncm_code",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 9,
+        "name": "cest",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 10,
+        "name": "cfop",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 11,
+        "name": "icms_origin",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 12,
+        "name": "icms_rate",
+        "type_info": "Numeric"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Uuid",
+        "Numeric",
+        "Numeric",
+        "Numeric",
+        "Numeric",
+        "Varchar",
+        "Varchar",
+        "Varchar",
+        "Varchar",
+        "Numeric"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      true,
+      true,
+      false
+    ]
+  },
+  "hash": "130d1dbeb4aba1630615ad041e3dba2971c029d73f57428ef707043034252492"
+}

@@ -2,20 +2,12 @@ use std::net::SocketAddr;
 
 use axum::{Json, Router, http::StatusCode, routing::get};
 use serde_json::json;
-use sqlx::PgPool;
 use sqlx::postgres::PgPoolOptions;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
-mod config;
-mod controllers;
-mod errors;
+use pdv_cloud_api::{AppState, app_router, config};
 
 use config::Config;
-
-#[derive(Clone)]
-pub struct AppState {
-    pub pool: Option<PgPool>,
-}
 
 #[tokio::main]
 async fn main() {
@@ -48,10 +40,7 @@ async fn main() {
     };
 
     let state = AppState { pool };
-    let app = Router::new()
-        .route("/health", get(controllers::health::health))
-        .route("/ready", get(controllers::health::ready))
-        .with_state(state);
+    let app = app_router(state);
 
     let addr = SocketAddr::from(([0, 0, 0, 0], cfg.port));
     tracing::info!("ouvindo em {addr}");
@@ -80,6 +69,7 @@ mod tests {
     use super::*;
     use axum::body::Body;
     use axum::http::Request;
+    use pdv_cloud_api::controllers;
     use tower::ServiceExt;
 
     #[tokio::test]
