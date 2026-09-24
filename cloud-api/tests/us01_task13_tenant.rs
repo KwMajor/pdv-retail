@@ -90,6 +90,29 @@ async fn ping_com_token_adulterado_rejeita_401() {
 }
 
 #[tokio::test]
+async fn ping_com_papel_desconhecido_rejeita_401() {
+    // Assinatura válida, mas `role` fora da lista: o extractor barra.
+    use jsonwebtoken::{Algorithm, EncodingKey, Header, encode};
+    use pdv_cloud_api::auth::Claims;
+    let now = chrono::Utc::now().timestamp();
+    let token = encode(
+        &Header::new(Algorithm::HS256),
+        &Claims {
+            sub: Uuid::new_v4(),
+            store_id: Uuid::new_v4(),
+            role: "dono".to_string(),
+            exp: now + 3600,
+            iat: now,
+        },
+        &EncodingKey::from_secret(b"test-only-secret-com-mais-de-32-chars"),
+    )
+    .unwrap();
+    let (status, json) = ping(Some(bearer(&token))).await;
+    assert_eq!(status, StatusCode::UNAUTHORIZED);
+    assert_eq!(json["code"], "UNAUTHORIZED");
+}
+
+#[tokio::test]
 async fn ping_com_token_expirado_rejeita_401() {
     // Bem além do leeway de 30s: determinístico.
     let past = chrono::Utc::now().timestamp() - 3600;
