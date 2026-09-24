@@ -1,0 +1,24 @@
+[package]
+name = "pdv-cloud-api"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+# Web (todas MIT/Apache-2.0)
+axum = "0.7"
+tokio = { version = "1", features = ["macros", "rt-multi-thread", "signal"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+# Dados
+sqlx = { version = "0.8", features = ["postgres", "runtime-tokio", "tls-rustls", "macros", "migrate"] }
+# Erros / obs / config
+thiserror = "2"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+dotenvy = "0.15"
+# Auth (US02) — Argon2 (OWASP A02/A07), JWT sessão curta
+argon2 = "0.5"
+jsonwebtoken = "9"
+
+[dev-dependencies]
+tower = { version = "0.4", features = ["util"] }

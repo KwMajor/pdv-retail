@@ -1,0 +1,21 @@
+# Segredos locais — NUNCA commitar (LGPD/SEFAZ: certificado A1, chaves, .env)
+.env
+*.pfx
+*.p12
+*.pem
+*.key
+
+# Build artifacts (são gerados localmente — é POR ISSO que essas pastas "não sobem", e está certo)
+target/
+node_modules/
+dist/
+src-tauri/target/
+
+# SO / editores
+.DS_Store
+Thumbs.db
+*.swp
+*~
+
+# Logs locais
+*.log
