@@ -6,11 +6,17 @@ edition = "2024"
 [dependencies]
 # Web (todas MIT/Apache-2.0)
 axum = "0.7"
+# Macro exigida para impls de FromRequestParts (o trait do axum-core é async_trait)
+async-trait = "0.1"
 tokio = { version = "1", features = ["macros", "rt-multi-thread", "signal"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
-# Dados
-sqlx = { version = "0.8", features = ["postgres", "runtime-tokio", "tls-rustls", "macros", "migrate"] }
+# Dados (features chrono/uuid/decimal/json permitem mapear TIMESTAMPTZ/UUID/DECIMAL/JSONB)
+sqlx = { version = "0.8", features = ["postgres", "runtime-tokio", "tls-rustls", "macros", "migrate", "chrono", "uuid", "rust_decimal", "json"] }
+# Tipos de domínio (todos MIT/Apache-2.0, compatíveis com SaaS closed-source)
+uuid = { version = "1", features = ["serde", "v4"] }
+chrono = { version = "0.4", features = ["serde"] }
+rust_decimal = { version = "1", features = ["serde"] }
 # Erros / obs / config
 thiserror = "2"
 tracing = "0.1"
