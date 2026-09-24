@@ -5,7 +5,7 @@ use serde_json::json;
 use sqlx::postgres::PgPoolOptions;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
-use pdv_cloud_api::{AppState, app_router, config};
+use pdv_cloud_api::{AppState, app_router, auth::JwtKeys, config};
 
 use config::Config;
 
@@ -39,7 +39,16 @@ async fn main() {
         }
     };
 
-    let state = AppState { pool };
+    // Segredo fraco = boot recusado (fail-fast sem panic: log + exit).
+    let jwt = match JwtKeys::from_secret(&cfg.jwt_secret) {
+        Ok(keys) => keys,
+        Err(detail) => {
+            tracing::error!(detail = %detail, "JWT_SECRET inválido, abortando boot");
+            std::process::exit(1);
+        }
+    };
+
+    let state = AppState { pool, jwt };
     let app = app_router(state);
 
     let addr = SocketAddr::from(([0, 0, 0, 0], cfg.port));
@@ -87,9 +96,16 @@ mod tests {
         assert_eq!(res.status(), StatusCode::OK);
     }
 
+    fn test_state(pool: Option<sqlx::PgPool>) -> AppState {
+        AppState {
+            pool,
+            jwt: JwtKeys::from_secret("test-only-secret-com-mais-de-32-chars").unwrap(),
+        }
+    }
+
     #[tokio::test]
     async fn ready_without_pool_is_503_not_configured() {
-        let state = AppState { pool: None };
+        let state = test_state(None);
         let (status, body) = controllers::health::ready(axum::extract::State(state)).await;
         assert_eq!(status, StatusCode::SERVICE_UNAVAILABLE);
         assert_eq!(body["status"], "degraded");
@@ -104,7 +120,7 @@ mod tests {
             .acquire_timeout(std::time::Duration::from_secs(2))
             .connect_lazy("postgres://pdv:pdv@127.0.0.1:1/pdv_test")
             .unwrap();
-        let state = AppState { pool: Some(pool) };
+        let state = test_state(Some(pool));
         let (status, body) = controllers::health::ready(axum::extract::State(state)).await;
         assert_eq!(status, StatusCode::SERVICE_UNAVAILABLE);
         assert_eq!(body["status"], "degraded");

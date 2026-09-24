@@ -97,7 +97,7 @@ pub async fn create_user(
 }
 
 /// Argon2id padrão (OWASP A02) com salt aleatório por credencial.
-fn hash_password(plain: &str) -> Result<String, argon2::password_hash::Error> {
+pub(crate) fn hash_password(plain: &str) -> Result<String, argon2::password_hash::Error> {
     let salt = SaltString::generate(&mut OsRng);
     Ok(Argon2::default()
         .hash_password(plain.as_bytes(), &salt)?

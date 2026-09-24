@@ -6,4 +6,4 @@
 
 pub mod tenant;
 
-pub use tenant::{TenantContext, STORE_ID_HEADER};
+pub use tenant::{StoreHint, TenantContext, STORE_ID_HEADER};
