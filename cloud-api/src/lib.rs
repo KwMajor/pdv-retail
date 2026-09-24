@@ -14,8 +14,9 @@ pub mod errors;
 pub mod middleware;
 pub mod models;
 pub mod repositories;
+pub mod services;
 
-use axum::{Router, routing::get};
+use axum::{Router, routing::{get, post}};
 use sqlx::PgPool;
 
 /// Estado compartilhado (pool opcional: `/health` responde sem banco).
@@ -32,5 +33,6 @@ pub fn app_router(state: AppState) -> Router {
         .route("/health", get(controllers::health::health))
         .route("/ready", get(controllers::health::ready))
         .route("/api/v1/ping", get(controllers::ping::ping))
+        .route("/api/v1/users", post(controllers::users::create_user_handler))
         .with_state(state)
 }
