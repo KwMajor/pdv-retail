@@ -4,6 +4,33 @@ use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
+/// Papel do funcionário (US02 Task 2.1). Lista fechada e tipada: qualquer
+/// outro valor é rejeitado na desserialização do payload (camada de rota).
+/// Serializa em minúsculo para casar com o `CHECK` do banco (`001_initial_schema.sql`).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum UserRole {
+    Admin,
+    Manager,
+    Cashier,
+}
+
+impl UserRole {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            UserRole::Admin => "admin",
+            UserRole::Manager => "manager",
+            UserRole::Cashier => "cashier",
+        }
+    }
+}
+
+impl std::fmt::Display for UserRole {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, sqlx::FromRow)]
 pub struct User {
     pub id: Uuid,

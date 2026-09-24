@@ -30,4 +30,4 @@ pub use sale_item::SaleItem;
 pub use stock::Stock;
 pub use stock_movement::StockMovement;
 pub use store_settings::StoreSettings;
-pub use user::User;
+pub use user::{User, UserRole};

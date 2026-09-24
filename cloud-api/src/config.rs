@@ -3,7 +3,12 @@
 pub struct Config {
     pub database_url: String,
     pub port: u16,
+    /// Segredo HMAC do JWT (US02). Validado em tamanho no boot (`JwtKeys`).
+    pub jwt_secret: String,
 }
+
+/// Default APENAS dev local. Produção exige `JWT_SECRET` forte via ambiente.
+const DEV_JWT_SECRET: &str = "dev-only-insecure-secret-troque-em-prod";
 
 impl Config {
     pub fn from_env() -> Self {
@@ -13,7 +18,9 @@ impl Config {
             .ok()
             .and_then(|p| p.parse().ok())
             .unwrap_or(3000);
-        Self { database_url, port }
+        let jwt_secret =
+            std::env::var("JWT_SECRET").unwrap_or_else(|_| DEV_JWT_SECRET.to_string());
+        Self { database_url, port, jwt_secret }
     }
 }
 
