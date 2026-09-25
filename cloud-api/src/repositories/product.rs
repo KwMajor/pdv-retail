@@ -38,8 +38,23 @@ pub struct ProductPatch {
 
 pub trait ProductRepository {
     async fn create(&self, input: NewProduct) -> Result<Product, sqlx::Error>;
+    /// Leitura dentro de transação (US03 Task 3.2: read-modify-write atômico).
+    async fn find_by_id_tx(
+        &self,
+        tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
+        store_id: Uuid,
+        id: Uuid,
+    ) -> Result<Option<Product>, sqlx::Error>;
     async fn update_details(
         &self,
+        store_id: Uuid,
+        id: Uuid,
+        patch: ProductPatch,
+    ) -> Result<Product, sqlx::Error>;
+    /// Mesma atualização dentro de transação (auditoria de preço).
+    async fn update_details_tx(
+        &self,
+        tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
         store_id: Uuid,
         id: Uuid,
         patch: ProductPatch,
@@ -94,6 +109,23 @@ impl PgProductRepository {
 }
 
 impl ProductRepository for PgProductRepository {
+    async fn find_by_id_tx(
+        &self,
+        tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
+        store_id: Uuid,
+        id: Uuid,
+    ) -> Result<Option<Product>, sqlx::Error> {
+        sqlx::query_as!(
+            Product,
+            "SELECT id, store_id, sku, barcode, name, price, cost, ncm, cest, cfop, icms_origin, icms_rate, is_active, created_at, updated_at
+             FROM product WHERE store_id = $1 AND id = $2",
+            store_id,
+            id,
+        )
+        .fetch_optional(&mut **tx)
+        .await
+    }
+
     async fn create(&self, input: NewProduct) -> Result<Product, sqlx::Error> {
         sqlx::query_as!(
             Product,
@@ -238,6 +270,43 @@ impl ProductRepository for PgProductRepository {
             limit,
         )
         .fetch_all(&self.pool)
+        .await
+    }
+
+    async fn update_details_tx(
+        &self,
+        tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
+        store_id: Uuid,
+        id: Uuid,
+        patch: ProductPatch,
+    ) -> Result<Product, sqlx::Error> {
+        sqlx::query_as!(
+            Product,
+            "UPDATE product SET
+               name = COALESCE($3, name),
+               barcode = COALESCE($4, barcode),
+               price = COALESCE($5, price),
+               cost = COALESCE($6, cost),
+               ncm = COALESCE($7, ncm),
+               cest = COALESCE($8, cest),
+               cfop = COALESCE($9, cfop),
+               icms_origin = COALESCE($10, icms_origin),
+               icms_rate = COALESCE($11, icms_rate)
+             WHERE store_id = $1 AND id = $2
+             RETURNING id, store_id, sku, barcode, name, price, cost, ncm, cest, cfop, icms_origin, icms_rate, is_active, created_at, updated_at",
+            store_id,
+            id,
+            patch.name,
+            patch.barcode,
+            patch.price,
+            patch.cost,
+            patch.ncm,
+            patch.cest,
+            patch.cfop,
+            patch.icms_origin,
+            patch.icms_rate,
+        )
+        .fetch_one(&mut **tx)
         .await
     }
 

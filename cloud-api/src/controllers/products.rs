@@ -230,9 +230,9 @@ pub async fn update_product_handler(
     Json(body): Json<UpdateProductRequest>,
 ) -> Result<Json<ProductResponse>, AppError> {
     ctx.require_manager()?;
-    let repo = PgProductRepository::new(pool_of(&state)?);
+    let pool = pool_of(&state)?;
     let product = update_product(
-        &repo,
+        &pool,
         ctx.store_id,
         id,
         UpdateProductInput {
@@ -246,6 +246,7 @@ pub async fn update_product_handler(
             icms_origin: body.icms_origin,
             icms_rate: body.icms_rate,
         },
+        Some(ctx.user_id),
     )
     .await
     .map_err(service_error)?;

@@ -19,6 +19,12 @@ pub struct NewAuditLog {
 
 pub trait AuditLogRepository {
     async fn record(&self, input: NewAuditLog) -> Result<AuditLog, sqlx::Error>;
+    /// Inserção dentro de transação (US03 Task 3.2: falha aqui = rollback).
+    async fn record_tx(
+        &self,
+        tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
+        input: NewAuditLog,
+    ) -> Result<AuditLog, sqlx::Error>;
     async fn list_by_store(
         &self,
         store_id: Uuid,
@@ -53,6 +59,28 @@ impl AuditLogRepository for PgAuditLogRepository {
             input.new_data,
         )
         .fetch_one(&self.pool)
+        .await
+    }
+
+    async fn record_tx(
+        &self,
+        tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
+        input: NewAuditLog,
+    ) -> Result<AuditLog, sqlx::Error> {
+        sqlx::query_as!(
+            AuditLog,
+            "INSERT INTO audit_log(store_id, actor_user_id, action, entity, entity_id, old_data, new_data)
+             VALUES ($1, $2, $3, $4, $5, $6, $7)
+             RETURNING id, store_id, actor_user_id, action, entity, entity_id, old_data, new_data, created_at",
+            input.store_id,
+            input.actor_user_id,
+            input.action,
+            input.entity,
+            input.entity_id,
+            input.old_data,
+            input.new_data,
+        )
+        .fetch_one(&mut **tx)
         .await
     }
 

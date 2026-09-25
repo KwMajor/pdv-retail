@@ -8,7 +8,10 @@ use rust_decimal::Decimal;
 use uuid::Uuid;
 
 use crate::models::Product;
-use crate::repositories::{NewProduct, PgProductRepository, ProductPatch, ProductRepository};
+use crate::repositories::{
+    AuditLogRepository, NewAuditLog, NewProduct, PgAuditLogRepository, PgProductRepository,
+    ProductPatch, ProductRepository,
+};
 
 /// Teto alinhado às colunas `VARCHAR` do banco.
 const NAME_MAX: usize = 255;
@@ -202,16 +205,18 @@ pub async fn create_product(
     Ok(created)
 }
 
+/// Atualização com auditoria de preço (US03 Task 3.2).
+/// `actor` = `sub` do JWT (quem alterou, gravado no `AUDIT_LOG`).
+/// Sem mudança de preço: update simples. Com mudança: transação atômica
+/// (produto + log); qualquer falha — inclusive no log — faz rollback.
 pub async fn update_product(
-    repo: &PgProductRepository,
+    pool: &sqlx::PgPool,
     store_id: Uuid,
     id: Uuid,
     input: UpdateProductInput,
+    actor: Option<Uuid>,
 ) -> Result<Product, ProductError> {
-    // Existe e é da loja? (Sem vazar: ausente ou de outra loja → NotFound.)
-    if repo.find_by_id(store_id, id).await?.is_none() {
-        return Err(ProductError::NotFound);
-    }
+    // Validação primeiro, fora de transação (não segura lock à toa).
     let patch = ProductPatch {
         name: input.name.map(|n| name(&n)).transpose()?,
         barcode: input.barcode.map(|b| barcode(&Some(b))).transpose()?.flatten(),
@@ -227,10 +232,43 @@ pub async fn update_product(
             .flatten(),
         icms_rate: input.icms_rate.map(|v| rate(v, "icms_rate")).transpose()?,
     };
-    // Preço passa por aqui sem auditoria até a Task 3.2 (comentário proposital).
-    repo.update_details(store_id, id, patch)
-        .await
-        .map_err(ProductError::Db)
+
+    let products = PgProductRepository::new(pool.clone());
+    let Some(new_price) = patch.price else {
+        // Sem preço no patch: update simples (existe? senão NotFound).
+        if products.find_by_id(store_id, id).await?.is_none() {
+            return Err(ProductError::NotFound);
+        }
+        return products.update_details(store_id, id, patch).await.map_err(ProductError::Db);
+    };
+
+    // Com preço: transação (leitura atual + update + log, tudo ou nada).
+    let mut tx = pool.begin().await.map_err(ProductError::Db)?;
+    let current = products
+        .find_by_id_tx(&mut tx, store_id, id)
+        .await?
+        .ok_or(ProductError::NotFound)?;
+    let updated = products
+        .update_details_tx(&mut tx, store_id, id, patch)
+        .await?;
+    if current.price != new_price {
+        PgAuditLogRepository::new(pool.clone())
+            .record_tx(
+                &mut tx,
+                NewAuditLog {
+                    store_id,
+                    actor_user_id: actor,
+                    action: "PRICE_CHANGE".to_string(),
+                    entity: "product".to_string(),
+                    entity_id: id.to_string(),
+                    old_data: Some(serde_json::json!({"price": current.price})),
+                    new_data: Some(serde_json::json!({"price": new_price})),
+                },
+            )
+            .await?;
+    }
+    tx.commit().await.map_err(ProductError::Db)?;
+    Ok(updated)
 }
 
 pub async fn get_product(
