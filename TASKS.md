@@ -108,6 +108,7 @@ O cadastro de produtos é o coração da operação. A SEFAZ exige rigor absolut
 *   [ ] O endpoint `POST /products` deve validar se o `ncm_code` possui exatamente 8 dígitos numéricos.
 *   [ ] O endpoint `DELETE /products/:id` não deve executar exclusão física. Deve atualizar a coluna `is_active = false` (Soft Delete).
 *   [ ] A listagem `GET /products` deve retornar apenas produtos onde `is_active = true` e `store_id` corresponda ao tenant do usuário autenticado.
+*   [ ] DoD Validação: `name` obrigatório ≤255 (trim, sem controles); `sku` obrigatório padrão `A-Z0-9-_/`; `barcode` só dígitos 8/12/13/14; `price`/`cost` decimal ≥0 com 2 casas; `ncm` 8 dígitos, `cest` 7 dígitos, `cfop` 4 dígitos, `icms_origin` dígito 0–8, `icms_rate` 0–100. Rejeitar fora do domínio com 422.
 *   [ ] DoD API Docs (Task 2.5): a(s) nova(s) rota(s) deve(m) sair anotada(s) no Swagger com request/response schemas + exemplos, incluindo todos os códigos de erro retornáveis; o teste anti-drift deve continuar verde.
 **Cenários de Teste (QA & Segurança):**
 *   **Edge Case:** Tentar enviar um NCM com letras ou tamanho incorreto. A API deve retornar HTTP 422 Unprocessable Entity.
@@ -119,6 +120,7 @@ O cadastro de produtos é o coração da operação. A SEFAZ exige rigor absolut
 *   [ ] No endpoint `PUT /products/:id`, comparar o `selling_price` do payload com o valor atual no banco.
 *   [ ] Se houver diferença, iniciar uma `sqlx::Transaction`. Atualizar o produto e inserir um registro na `AUDIT_LOG` com `action_type = "PRICE_CHANGE"`, guardando o valor antigo e novo no campo `JSONB`.
 *   [ ] Se a inserção no log falhar, toda a transação deve sofrer *rollback*.
+*   [ ] DoD Validação: `selling_price` do payload decimal ≥0 com 2 casas (rejeitar letras/símbolos e negativos com 422); `entity_id` UUID válido.
 **Cenários de Teste (QA):**
 *   **Happy Path:** Alterar o preço de R$ 10 para R$ 15. Verificar no banco se a tabela `AUDIT_LOG` contém o `user_id` de quem alterou e a divergência de valores.
 
@@ -127,6 +129,7 @@ O cadastro de produtos é o coração da operação. A SEFAZ exige rigor absolut
 **Critérios de Aceite (DoD):**
 *   [ ] Formulário dividido em abas ou seções: "Dados Gerais" (Nome, EAN, Preços) e "Fiscal" (NCM, CEST, CFOP Padrão, Origem).
 *   [ ] Máscaras de input aplicadas para código de barras (GTIN/EAN) e formatação monetária padrão BRL.
+*   [ ] DoD Validação (frontend): máscara bloqueia o caractere inválido E exibe erro explicativo (padrão para os formulários seguintes); mesmas regras da Task 3.1 revalidadas pelo backend, que é a autoridade.
 *   [ ] Integração com a Cloud API enviando o token JWT no cabeçalho.
 
 ---
@@ -150,6 +153,7 @@ O estoque não é apenas um número estático; é uma conta corrente. Não podem
 **Critérios de Aceite (DoD):**
 *   [ ] Endpoint `POST /stock/adjust` que recebe um array de itens, quantidades e o motivo do ajuste.
 *   [ ] Permissão estrita para perfis gerenciais.
+*   [ ] DoD Validação: quantidades decimais ≠0 com até 3 casas; `movement_type` em enum fechado; motivo obrigatório ≤500 (trim); `product_id` UUID válido. Fora do domínio → 422.
 *   [ ] DoD API Docs (Task 2.5): a(s) nova(s) rota(s) deve(m) sair anotada(s) no Swagger com request/response schemas + exemplos, incluindo todos os códigos de erro retornáveis; o teste anti-drift deve continuar verde.
 **Cenários de Teste (QA):**
 *   **Edge Case:** Tentar inserir um ajuste que deixe o saldo negativo em produtos não configurados para permitir saldo negativo. A transação deve falhar e alertar o usuário.
@@ -215,6 +219,7 @@ Clientes frequentemente dividem o pagamento (ex: metade no cartão, metade em di
 *   [ ] O payload deve receber um array de objetos `payments` contendo `method`, `tendered_amount` (valor entregue) e `amount` (valor consumido).
 *   [ ] O backend deve iterar sobre o array e somar o `amount` de cada método. A venda só pode ser registrada se a soma exata dos `amount` for igual ao `total_amount` (líquido) da venda.
 *   [ ] Se o método for diferente de `CASH` (Dinheiro), o `tendered_amount` não pode ser maior que o `amount` (não há troco em PIX/Cartão).
+*   [ ] DoD Validação: `method` em enum fechado; `amount` decimal >0 com 2 casas; `tendered_amount` decimal ≥0 com 2 casas (obrigatório só p/ cash); array não-vazio. Fora do domínio → 422.
 *   [ ] DoD API Docs (Task 2.5): a(s) nova(s) rota(s) deve(m) sair anotada(s) no Swagger com request/response schemas + exemplos, incluindo todos os códigos de erro retornáveis; o teste anti-drift deve continuar verde.
 **Cenários de Teste (QA & Segurança):**
 *   **Edge Case (Pagamento Menor):** Enviar array totalizando R$ 40 para uma venda de R$ 50. A API deve barrar com HTTP 422.
@@ -226,6 +231,7 @@ Clientes frequentemente dividem o pagamento (ex: metade no cartão, metade em di
 *   [ ] O modal deve exibir o "Valor Total", "Valor Pago até agora" e "Falta Pagar".
 *   [ ] Botões rápidos para métodos de pagamento (Dinheiro, PIX, Crédito, Débito).
 *   [ ] O botão "Finalizar Venda" deve permanecer bloqueado (disabled) até que o "Falta Pagar" seja menor ou igual a zero.
+*   [ ] DoD Validação (frontend): campo de valor aceita só dígitos e separador decimal (máscara BRL bloqueante + erro); valor final revalidado pelo backend, que é a autoridade.
 
 ---
 
@@ -240,6 +246,7 @@ O operador precisa de feedback visual imediato para dar o troco corretamente. Er
 **Critérios de Aceite (DoD):**
 *   [ ] Se o "Falta Pagar" for R$ 20 e o operador selecionar "Dinheiro" e digitar "R$ 50", a tela deve imediatamente exibir "Troco: R$ 30,00" em destaque.
 *   [ ] No payload a ser enviado para a API, este pagamento deve ir como `tendered_amount: 50`, `amount: 20`, para que o backend grave a diferença na tabela `SALE` (`change_amount: 30`).
+*   [ ] DoD Validação (frontend): input de valor entregue só aceita dígitos (máscara BRL bloqueante + erro); cálculo do troco nunca negativo (piso R$ 0,00).
 **Cenários de Teste (QA):**
 *   **Happy Path:** Operador digita valor superior ao devido. Troco é calculado e venda é liberada.
 *   **Edge Case:** Operador digita exatamente o valor devido. Troco deve mostrar R$ 0,00 e liberar a venda.
@@ -258,6 +265,7 @@ Para assinar XMLs com valor legal, a API precisa do certificado digital e-CNPJ (
 *   [ ] O arquivo `.pfx` deve ser validado via parse antes de ser salvo (para garantir que não é um malware renomeado).
 *   [ ] A senha do certificado (`certificate_password`) deve ser criptografada em repouso no banco de dados usando uma chave mestra (AES-256) armazenada nas variáveis de ambiente (`.env`) do servidor. Não deve ficar em texto plano.
 *   [ ] Acesso a esta tela e rota é exclusivo para o papel `ADMIN/DONO`.
+*   [ ] DoD Validação: CNPJ só dígitos com 14 posições e DV válido; senha do certificado 1–128 chars (nunca logada, nunca devolvida); arquivo limitado a 5MB e extensão `.pfx`/`.p12`. Fora do domínio → 422.
 *   [ ] DoD API Docs (Task 2.5): a(s) nova(s) rota(s) deve(m) sair anotada(s) no Swagger com request/response schemas + exemplos, incluindo todos os códigos de erro retornáveis; o teste anti-drift deve continuar verde.
 **Cenários de Teste (Security):**
 *   **Security Case:** Tentar baixar ou visualizar a senha do certificado através de uma rota `GET`. A API nunca deve expor a senha de volta ao frontend; ela é usada apenas internamente pelo motor fiscal.
@@ -354,6 +362,7 @@ O dinheiro na gaveta precisa bater centavo por centavo com o que o sistema regis
 *   [ ] Rota `POST /shifts/open` deve receber o `opening_balance`. O sistema deve validar se o `cashier_id` já possui um turno com `closed_at = null`. Se sim, rejeitar com HTTP 409 Conflict.
 *   [ ] O endpoint de registro de Venda (`POST /sales`) agora deve verificar se o caixa autenticado possui um turno aberto. Se não possuir, a venda deve ser bloqueada.
 *   [ ] Rota `POST /shifts/close` deve receber o `actual_closed_balance` (declarado pelo operador). O backend calcula a diferença entre o esperado e o declarado e encerra o turno carimbando a data final.
+*   [ ] DoD Validação: `opening_balance`/`actual_closed_balance` decimais ≥0 com 2 casas; `shift_id` UUID válido e aberto. Fora do domínio → 422.
 *   [ ] DoD API Docs (Task 2.5): a(s) nova(s) rota(s) deve(m) sair anotada(s) no Swagger com request/response schemas + exemplos, incluindo todos os códigos de erro retornáveis; o teste anti-drift deve continuar verde.
 **Cenários de Teste (QA):**
 *   **Edge Case:** Tentar registrar uma venda no turno do dia anterior que o operador esqueceu de fechar, mas após 24h. O sistema deve alertar o gerente.
@@ -364,6 +373,7 @@ O dinheiro na gaveta precisa bater centavo por centavo com o que o sistema regis
 **Critérios de Aceite (DoD):**
 *   [ ] Se o estado global (`Zustand`) não identificar um `shift_id` ativo, a tela de bipar produtos deve ser bloqueada por um Modal de Abertura.
 *   [ ] No fechamento, a tela não deve mostrar o "Valor Esperado". O operador precisa contar o dinheiro e digitar quanto achou. O sistema mostrará a quebra (falta/sobra) apenas no relatório do gerente.
+*   [ ] DoD Validação (frontend): inputs de valores só aceitam dígitos (máscara BRL bloqueante + erro); contagem negativa é impossível (piso R$ 0,00).
 
 ---
 
@@ -378,6 +388,7 @@ Durante o expediente, pode faltar troco (Suprimento: o gerente coloca mais R$ 10
 **Critérios de Aceite (DoD):**
 *   [ ] Rota `POST /shifts/movement` exigindo `movement_type` (SANGRIA, SUPRIMENTO) e um motivo obrigatório (`description`).
 *   [ ] Deve vincular obrigatoriamente a um `shift_id` em aberto.
+*   [ ] DoD Validação: `movement_type` em enum fechado; `description` obrigatória ≤500 (trim); valor decimal >0 com 2 casas; `shift_id` UUID válido e aberto. Fora do domínio → 422.
 *   [ ] Inserir uma trava: O valor de uma Sangria nunca pode ser superior ao valor atual em dinheiro físico (`CASH`) calculado pelo sistema naquele momento do turno.
 *   [ ] DoD API Docs (Task 2.5): a(s) nova(s) rota(s) deve(m) sair anotada(s) no Swagger com request/response schemas + exemplos, incluindo todos os códigos de erro retornáveis; o teste anti-drift deve continuar verde.
 **Cenários de Teste (QA):**
@@ -396,6 +407,7 @@ O varejista precisa saber se a loja está dando lucro. Para isso, não basta reg
 **Critérios de Aceite (DoD):**
 *   [ ] Rota `POST /suppliers` validando `cnpj_cpf` do fornecedor ou produtor rural.
 *   [ ] Rota `POST /expenses` para registrar o boleto, contendo `due_date`, `amount` e status (`PENDING` ou `PAID`).
+*   [ ] DoD Validação: `cnpj_cpf` só dígitos 11/14 com DV válido; nome ≤255 (trim); `due_date` data válida (formato ISO, ano 2000–2100); `amount` decimal >0 com 2 casas; `status` em enum fechado. Fora do domínio → 422.
 *   [ ] Se uma despesa for paga utilizando dinheiro da gaveta do caixa, o endpoint de pagamento deve, na mesma transação SQLx, inserir um `CASH_MOVEMENT` (tipo DESPESA) no turno ativo correspondente.
 *   [ ] DoD API Docs (Task 2.5): a(s) nova(s) rota(s) deve(m) sair anotada(s) no Swagger com request/response schemas + exemplos, incluindo todos os códigos de erro retornáveis; o teste anti-drift deve continuar verde.
 **Cenários de Teste (QA):**
@@ -413,6 +425,7 @@ O dono da loja quer acessar a retaguarda web de casa e ver um gráfico mostrando
 **Descrição:** Escrever consultas SQL complexas utilizando `GROUP BY` e agregadores (`SUM`) para retornar dados consolidados por período, cuidando da performance.
 **Critérios de Aceite (DoD):**
 *   [ ] Criar endpoint `GET /reports/cashflow?start_date=X&end_date=Y`.
+*   [ ] DoD Validação: datas em ISO (`YYYY-MM-DD`), `start_date` ≤ `end_date`, intervalo máximo de 366 dias; formato inválido → 422.
 *   [ ] A consulta SQL deve cruzar a tabela `SALE` (status = COMPLETED) somando os recebimentos, subtraindo o custo da mercadoria (`cost_price` histórico na tabela de produtos, se rastreado) e subtraindo a tabela `EXPENSE` (status = PAID).
 *   [ ] Utilizar índices adequados no PostgreSQL (ex: criar um índice em `created_at` na tabela `SALE`) para que a consulta de um ano inteiro não dê *timeout*.
 *   [ ] DoD API Docs (Task 2.5): a(s) nova(s) rota(s) deve(m) sair anotada(s) no Swagger com request/response schemas + exemplos, incluindo todos os códigos de erro retornáveis; o teste anti-drift deve continuar verde.
@@ -438,12 +451,14 @@ O cliente da casa leva a mercadoria hoje e paga no fim do mês. Como a mercadori
 *   [ ] Ao receber um payload com `transaction_type = 'SALE'` e status `PENDING`, a API deve pular a fila de geração do XML Fiscal (US10).
 *   [ ] O sistema deve inserir a venda, os itens, não registrar pagamento (ou registrar como "A PRAZO") e **deve** gerar a saída no `STOCK_MOVEMENT`, pois a peça saiu da loja.
 *   [ ] O payload deve conter obrigatoriamente um `customer_id` válido. Venda pendente não pode ser anônima.
+*   [ ] DoD Validação: `customer_id` UUID válido e ativo; itens com `quantity` decimal >0 e `unit_price` decimal ≥0 (2 casas); `transaction_type` em enum fechado. Fora do domínio → 422.
 
 #### Task 18.2: Validação e Trava de Limite de Crédito (Backend)
 **Descrição:** Impedir que o saldo devedor de um cliente estoure o limite acordado sem autorização.
 **Critérios de Aceite (DoD):**
 *   [ ] Antes de gravar a venda `PENDING`, o backend deve somar todas as vendas com status `PENDING` daquele cliente e adicionar o valor da compra atual.
 *   [ ] Se a soma for maior que o `credit_limit` da tabela `CUSTOMER`, o backend deve rejeitar a transação com HTTP 403 (ou código específico), exigindo o `override_pin` gerencial para prosseguir (integração com US21).
+*   [ ] DoD Validação: `credit_limit` decimal ≥0 com 2 casas; `override_pin` só dígitos 4–6 quando presente. Fora do domínio → 422.
 
 ---
 
@@ -459,6 +474,7 @@ Chegou o final do mês. O "Seu João" vem à loja pagar a conta que acumulou R$ 
 *   [ ] Uma interface de busca por Nome/CPF que traga o saldo devedor total.
 *   [ ] Exibir um grid com todas as vendas em status `PENDING`.
 *   [ ] O operador pode selecionar uma, várias ou todas as vendas pendentes para quitar de uma só vez.
+*   [ ] DoD Validação (frontend): busca por Nome/CPF com máscara de CPF (só dígitos, 11 posições) e `trim`; array de `sale_id` só com UUIDs válidos antes de enviar.
 
 #### Task 19.2: Consolidação e Gatilho Fiscal (Backend)
 **Descrição:** Endpoint para processar o pagamento e engatilhar a nota.
@@ -467,6 +483,7 @@ Chegou o final do mês. O "Seu João" vem à loja pagar a conta que acumulou R$ 
 *   [ ] O backend altera o status dessas vendas de `PENDING` para `COMPLETED`.
 *   [ ] O backend injeta as vendas pagas na fila de geração de XML (US10) de forma assíncrona.
 *   [ ] Nenhuma alteração no `STOCK` deve ocorrer aqui, pois já foi reduzido na US18.
+*   [ ] DoD Validação: `sale_id` UUIDs válidos da mesma loja e com status `PENDING`; `PAYMENT` segue as regras da Task 7.1. Fora do domínio → 422.
 *   [ ] DoD API Docs (Task 2.5): a(s) nova(s) rota(s) deve(m) sair anotada(s) no Swagger com request/response schemas + exemplos, incluindo todos os códigos de erro retornáveis; o teste anti-drift deve continuar verde.
 
 ---
@@ -497,11 +514,13 @@ Toda operação que gera risco financeiro para a loja (desconto exagerado, estou
 **Critérios de Aceite (DoD):**
 *   [ ] O estado global (Zustand) deve monitorar gatilhos: Excluir item do carrinho, aplicar desconto superior a 10% ou recebimento de erro "Limite Estourado" da US18.
 *   [ ] Ao disparar o gatilho, abrir um Modal "Autorização Necessária" com teclado numérico exigindo o PIN do Gerente.
+*   [ ] DoD Validação (frontend): PIN só dígitos 4–6 (teclado numérico bloqueante + erro); desconto percentual 0–100 (nunca letras/símbolos).
 
 #### Task 21.2: Endpoint de Autorização e Auditoria (Backend)
 **Descrição:** Rota sensível que valida a autoridade e carimba o passe livre temporário.
 **Critérios de Aceite (DoD):**
 *   [ ] Rota `POST /auth/override` recebe o PIN digitado.
+*   [ ] DoD Validação: PIN só dígitos, 4–6 posições (qualquer outro formato → 422 sem tocar no Argon2); `action` em enum fechado de ações autorizáveis.
 *   [ ] A API varre a tabela `USER` buscando usuários ativos com `role = 'MANAGER' ou 'ADMIN'` no mesmo `store_id` e compara os hashes (Argon2).
 *   [ ] Em caso de sucesso, insere o registro na tabela `AUDIT_LOG` apontando qual gerente liberou qual ação para qual caixa.
 *   [ ] Retorna um token ou assinatura de uso único (One-Time Pass) para que o frontend anexe ao payload da venda/cancelamento, provando para a API que a ação foi autorizada legitimamente (prevenindo bypass via Postman/cURL).
