@@ -28,12 +28,19 @@ pub struct TenantContext {
 }
 
 impl TenantContext {
-    /// RBAC básico (OWASP A01): só gestão cria usuários / acessa retaguarda.
-    pub fn require_manager(&self) -> Result<(), AppError> {
-        match self.role {
-            UserRole::Admin | UserRole::Manager => Ok(()),
-            UserRole::Cashier => Err(AppError::Forbidden),
+    /// RBAC (OWASP A01, US02 Task 2.3): o papel do JWT precisa estar na lista
+    /// exigida pela rota. Fora dela → `403`, sem revelar nada além do código.
+    pub fn require_roles(&self, allowed: &[UserRole]) -> Result<(), AppError> {
+        if allowed.contains(&self.role) {
+            Ok(())
+        } else {
+            Err(AppError::Forbidden)
         }
+    }
+
+    /// Atalho: gestão (`admin`/`manager`) — retaguarda e cadastros.
+    pub fn require_manager(&self) -> Result<(), AppError> {
+        self.require_roles(&[UserRole::Admin, UserRole::Manager])
     }
 }
 
