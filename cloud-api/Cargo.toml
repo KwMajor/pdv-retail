@@ -22,6 +22,9 @@ thiserror = "2"
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 dotenvy = "0.15"
+# Docs OpenAPI (US02 Task 2.5) — MIT/Apache-2.0, code-first via derives
+utoipa = "4"
+utoipa-swagger-ui = { version = "7", features = ["axum"] }
 # Auth (US02) — Argon2 (OWASP A02/A07), JWT sessão curta
 argon2 = "0.5"
 # Salt aleatório do Argon2 (mesma versão que o password-hash usa: 0.6)

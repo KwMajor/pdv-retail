@@ -115,7 +115,7 @@ mod tests {
     }
 
     fn state() -> AppState {
-        AppState { pool: None, jwt: keys() }
+        AppState { pool: None, jwt: keys(), expose_docs: false }
     }
 
     fn parts_with(headers: &[(&str, &str)]) -> Parts {

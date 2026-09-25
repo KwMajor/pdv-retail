@@ -103,6 +103,7 @@ fn app_with_db(p: sqlx::PgPool) -> axum::Router {
     app_router(AppState {
         pool: Some(p),
         jwt: JwtKeys::from_secret(TEST_SECRET).unwrap(),
+        expose_docs: true,
     })
 }
 

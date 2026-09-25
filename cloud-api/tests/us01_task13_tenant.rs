@@ -23,7 +23,7 @@ fn keys() -> JwtKeys {
 }
 
 fn app() -> axum::Router {
-    app_router(AppState { pool: None, jwt: keys() })
+    app_router(AppState { pool: None, jwt: keys(), expose_docs: false })
 }
 
 fn bearer(token: &str) -> String {
