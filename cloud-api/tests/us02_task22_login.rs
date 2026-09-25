@@ -228,6 +228,7 @@ async fn senha_gigante_cai_no_401_generico_sem_argon2() {
     )
     .await;
     assert_eq!(s1, StatusCode::UNAUTHORIZED);
+    assert_eq!(s2, StatusCode::UNAUTHORIZED);
     assert_eq!(j1.to_string(), j2.to_string());
 }
 

@@ -42,7 +42,7 @@ pub use audit_log::{AuditLogRepository, NewAuditLog, PgAuditLogRepository};
 pub use customer::{CustomerRepository, NewCustomer, PgCustomerRepository};
 pub use fiscal_queue::{FiscalQueueRepository, NewFiscalQueue, PgFiscalQueueRepository};
 pub use payment::{NewPayment, PaymentRepository, PgPaymentRepository};
-pub use product::{NewProduct, PgProductRepository, ProductRepository};
+pub use product::{NewProduct, PgProductRepository, ProductPatch, ProductRepository};
 pub use sale::{NewSale, PgSaleRepository, SaleRepository};
 pub use sale_item::{NewSaleItem, PgSaleItemRepository, SaleItemRepository};
 pub use stock::{PgStockRepository, StockRepository, UpsertStock};
