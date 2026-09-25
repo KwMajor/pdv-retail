@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "SELECT id, store_id, sale_id, product_id, quantity, unit_price, discount, total, ncm_code, cest, cfop, icms_origin, icms_rate\n             FROM sale_item WHERE store_id = $1 AND sale_id = $2",
+  "query": "SELECT id, store_id, sale_id, product_id, quantity, unit_price, unit_cost_price, discount, total, ncm_code, cest, cfop, icms_origin, icms_rate\n             FROM sale_item WHERE store_id = $1 AND id = $2",
   "describe": {
     "columns": [
       {
@@ -35,36 +35,41 @@
       },
       {
         "ordinal": 6,
-        "name": "discount",
+        "name": "unit_cost_price",
         "type_info": "Numeric"
       },
       {
         "ordinal": 7,
-        "name": "total",
+        "name": "discount",
         "type_info": "Numeric"
       },
       {
         "ordinal": 8,
+        "name": "total",
+        "type_info": "Numeric"
+      },
+      {
+        "ordinal": 9,
         "name": "ncm_code",
         "type_info": "Varchar"
       },
       {
-        "ordinal": 9,
+        "ordinal": 10,
         "name": "cest",
         "type_info": "Varchar"
       },
       {
-        "ordinal": 10,
+        "ordinal": 11,
         "name": "cfop",
         "type_info": "Varchar"
       },
       {
-        "ordinal": 11,
+        "ordinal": 12,
         "name": "icms_origin",
         "type_info": "Varchar"
       },
       {
-        "ordinal": 12,
+        "ordinal": 13,
         "name": "icms_rate",
         "type_info": "Numeric"
       }
@@ -84,6 +89,7 @@
       false,
       false,
       false,
+      false,
       true,
       true,
       true,
@@ -91,5 +97,5 @@
       false
     ]
   },
-  "hash": "6d2582d4c5368a100958d949314f673d9524720c1c198671266167cf45de097a"
+  "hash": "7a7194dced1845bd7b68f350080b83b2c81037a2790bab51fb119fb88113d27b"
 }

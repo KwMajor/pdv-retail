@@ -14,6 +14,9 @@ pub struct NewSaleItem {
     pub product_id: Uuid,
     pub quantity: Decimal,
     pub unit_price: Decimal,
+    /// Snapshot de `product.cost` no momento da venda. Tipo não-`Option`:
+    /// omitir nem compila (regra anti-NULL do lucro bruto).
+    pub unit_cost_price: Decimal,
     pub discount: Decimal,
     pub total: Decimal,
     /// Snapshot fiscal copiado de `product` no momento da venda.
@@ -53,14 +56,15 @@ impl SaleItemRepository for PgSaleItemRepository {
     async fn create(&self, input: NewSaleItem) -> Result<SaleItem, sqlx::Error> {
         sqlx::query_as!(
             SaleItem,
-            "INSERT INTO sale_item(store_id, sale_id, product_id, quantity, unit_price, discount, total, ncm_code, cest, cfop, icms_origin, icms_rate)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
-             RETURNING id, store_id, sale_id, product_id, quantity, unit_price, discount, total, ncm_code, cest, cfop, icms_origin, icms_rate",
+            "INSERT INTO sale_item(store_id, sale_id, product_id, quantity, unit_price, unit_cost_price, discount, total, ncm_code, cest, cfop, icms_origin, icms_rate)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+             RETURNING id, store_id, sale_id, product_id, quantity, unit_price, unit_cost_price, discount, total, ncm_code, cest, cfop, icms_origin, icms_rate",
             input.store_id,
             input.sale_id,
             input.product_id,
             input.quantity,
             input.unit_price,
+            input.unit_cost_price,
             input.discount,
             input.total,
             input.ncm_code,
@@ -80,7 +84,7 @@ impl SaleItemRepository for PgSaleItemRepository {
     ) -> Result<Option<SaleItem>, sqlx::Error> {
         sqlx::query_as!(
             SaleItem,
-            "SELECT id, store_id, sale_id, product_id, quantity, unit_price, discount, total, ncm_code, cest, cfop, icms_origin, icms_rate
+            "SELECT id, store_id, sale_id, product_id, quantity, unit_price, unit_cost_price, discount, total, ncm_code, cest, cfop, icms_origin, icms_rate
              FROM sale_item WHERE store_id = $1 AND id = $2",
             store_id,
             id,
@@ -96,7 +100,7 @@ impl SaleItemRepository for PgSaleItemRepository {
     ) -> Result<Vec<SaleItem>, sqlx::Error> {
         sqlx::query_as!(
             SaleItem,
-            "SELECT id, store_id, sale_id, product_id, quantity, unit_price, discount, total, ncm_code, cest, cfop, icms_origin, icms_rate
+            "SELECT id, store_id, sale_id, product_id, quantity, unit_price, unit_cost_price, discount, total, ncm_code, cest, cfop, icms_origin, icms_rate
              FROM sale_item WHERE store_id = $1 AND sale_id = $2",
             store_id,
             sale_id,

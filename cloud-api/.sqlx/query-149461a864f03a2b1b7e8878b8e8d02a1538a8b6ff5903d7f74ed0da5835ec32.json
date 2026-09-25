@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "INSERT INTO sale_item(store_id, sale_id, product_id, quantity, unit_price, discount, total, ncm_code, cest, cfop, icms_origin, icms_rate)\n             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)\n             RETURNING id, store_id, sale_id, product_id, quantity, unit_price, discount, total, ncm_code, cest, cfop, icms_origin, icms_rate",
+  "query": "INSERT INTO sale_item(store_id, sale_id, product_id, quantity, unit_price, unit_cost_price, discount, total, ncm_code, cest, cfop, icms_origin, icms_rate)\n             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)\n             RETURNING id, store_id, sale_id, product_id, quantity, unit_price, unit_cost_price, discount, total, ncm_code, cest, cfop, icms_origin, icms_rate",
   "describe": {
     "columns": [
       {
@@ -35,36 +35,41 @@
       },
       {
         "ordinal": 6,
-        "name": "discount",
+        "name": "unit_cost_price",
         "type_info": "Numeric"
       },
       {
         "ordinal": 7,
-        "name": "total",
+        "name": "discount",
         "type_info": "Numeric"
       },
       {
         "ordinal": 8,
+        "name": "total",
+        "type_info": "Numeric"
+      },
+      {
+        "ordinal": 9,
         "name": "ncm_code",
         "type_info": "Varchar"
       },
       {
-        "ordinal": 9,
+        "ordinal": 10,
         "name": "cest",
         "type_info": "Varchar"
       },
       {
-        "ordinal": 10,
+        "ordinal": 11,
         "name": "cfop",
         "type_info": "Varchar"
       },
       {
-        "ordinal": 11,
+        "ordinal": 12,
         "name": "icms_origin",
         "type_info": "Varchar"
       },
       {
-        "ordinal": 12,
+        "ordinal": 13,
         "name": "icms_rate",
         "type_info": "Numeric"
       }
@@ -74,6 +79,7 @@
         "Uuid",
         "Uuid",
         "Uuid",
+        "Numeric",
         "Numeric",
         "Numeric",
         "Numeric",
@@ -94,6 +100,7 @@
       false,
       false,
       false,
+      false,
       true,
       true,
       true,
@@ -101,5 +108,5 @@
       false
     ]
   },
-  "hash": "130d1dbeb4aba1630615ad041e3dba2971c029d73f57428ef707043034252492"
+  "hash": "149461a864f03a2b1b7e8878b8e8d02a1538a8b6ff5903d7f74ed0da5835ec32"
 }
