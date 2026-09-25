@@ -7,7 +7,7 @@ use uuid::Uuid;
 /// Papel do funcionário (US02 Task 2.1). Lista fechada e tipada: qualquer
 /// outro valor é rejeitado na desserialização do payload (camada de rota).
 /// Serializa em minúsculo para casar com o `CHECK` do banco (`001_initial_schema.sql`).
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, utoipa::ToSchema)]
 #[serde(rename_all = "lowercase")]
 pub enum UserRole {
     Admin,

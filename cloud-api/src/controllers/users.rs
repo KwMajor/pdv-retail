@@ -6,7 +6,6 @@
 //! - Resposta `201` sem nenhum hash (credencial nunca volta ao cliente).
 
 use axum::{Json, http::StatusCode};
-use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 use crate::errors::AppError;
@@ -16,18 +15,24 @@ use crate::repositories::{PgUserRepository, UserRepository};
 use crate::services::{CreateUserError, CreateUserInput, create_user};
 
 /// Payload de criação. Deliberadamente SEM `store_id` (DoD: implícito do criador).
-#[derive(Debug, Deserialize)]
+#[derive(Debug, serde::Deserialize, utoipa::ToSchema)]
+#[schema(example = json!({"name": "Maria Caixa", "email": "maria@loja.exemplo", "password": "senha-exemplo-123", "role": "cashier"}))]
 pub struct CreateUserRequest {
     pub name: String,
     pub email: String,
+    /// Texto plano só no request — nunca volta em resposta (ver `UserResponse`).
     pub password: String,
     pub role: UserRole,
 }
 
-/// Resposta pública: espelho do `User` sem `password_hash`/`pin_hash`.
-#[derive(Debug, Serialize)]
+/// Resposta pública: espelho do `User` sem nenhum hash de credencial.
+/// NUNCA derivar `ToSchema` em `User` (vazaria credencial nos exemplos).
+#[derive(Debug, serde::Serialize, utoipa::ToSchema)]
+#[schema(example = json!({"id": "11111111-1111-1111-1111-111111111111", "store_id": "22222222-2222-2222-2222-222222222222", "name": "Maria Caixa", "email": "maria@loja.exemplo", "role": "cashier", "is_active": true}))]
 pub struct UserResponse {
+    #[schema(value_type = String, example = "11111111-1111-1111-1111-111111111111")]
     pub id: Uuid,
+    #[schema(value_type = String, example = "22222222-2222-2222-2222-222222222222")]
     pub store_id: Uuid,
     pub name: String,
     pub email: String,
@@ -50,6 +55,17 @@ impl From<User> for UserResponse {
 
 /// `GET /api/v1/me` — identidade do token (o desktop revalida a sessão
 /// restaurada do cofre aqui; token expirado nem chega: 401 do extractor).
+#[utoipa::path(
+    get,
+    path = "/api/v1/me",
+    tag = "sistema",
+    security(("bearer" = [])),
+    responses(
+        (status = 200, description = "Identidade do token (sem hashes)", body = UserResponse),
+        (status = 401, description = "Sem Bearer válido", body = ErrorBody),
+        (status = 404, description = "Usuário desativado/removido após emissão", body = ErrorBody),
+    ),
+)]
 pub async fn me_handler(
     ctx: TenantContext,
     axum::extract::State(state): axum::extract::State<crate::AppState>,
@@ -81,6 +97,24 @@ fn service_error(e: CreateUserError) -> AppError {
     }
 }
 
+#[utoipa::path(
+    post,
+    path = "/api/v1/users",
+    tag = "usuarios",
+    security(("bearer" = [])),
+    request_body(
+        content = CreateUserRequest,
+        description = "Sem campo store_id: vale o tenant do token"
+    ),
+    responses(
+        (status = 201, description = "Funcionário criado (sem hashes)", body = UserResponse),
+        (status = 400, description = "Validação (nome/email/senha)", body = ErrorBody),
+        (status = 401, description = "Sem Bearer válido", body = ErrorBody),
+        (status = 403, description = "Caixa não cadastra (só gestão)", body = ErrorBody),
+        (status = 409, description = "Email já cadastrado na loja", body = ErrorBody),
+        (status = 422, description = "Role fora da lista (texto do Axum)", body = String),
+    ),
+)]
 pub async fn create_user_handler(
     ctx: TenantContext,
     axum::extract::State(pool): axum::extract::State<crate::AppState>,

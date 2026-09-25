@@ -4,10 +4,29 @@
 //! o tenant já foi validado. Retorna o `store_id` identificado.
 
 use axum::Json;
-use serde_json::{Value, json};
+use uuid::Uuid;
 
 use crate::middleware::TenantContext;
 
-pub async fn ping(ctx: TenantContext) -> Json<Value> {
-    Json(json!({"status": "pong", "store_id": ctx.store_id}))
+/// Prova de isolamento: ecoa o tenant autenticado.
+#[derive(Debug, serde::Serialize, utoipa::ToSchema)]
+#[schema(example = json!({"status": "pong", "store_id": "22222222-2222-2222-2222-222222222222"}))]
+pub struct PingResponse {
+    pub status: String,
+    #[schema(value_type = String)]
+    pub store_id: Uuid,
+}
+
+#[utoipa::path(
+    get,
+    path = "/api/v1/ping",
+    tag = "isolamento",
+    security(("bearer" = [])),
+    responses(
+        (status = 200, description = "Tenant identificado (eco do store_id)", body = PingResponse),
+        (status = 401, description = "Sem Bearer, token adulterado/expirado ou papel desconhecido", body = ErrorBody),
+    ),
+)]
+pub async fn ping(ctx: TenantContext) -> Json<PingResponse> {
+    Json(PingResponse { status: "pong".to_string(), store_id: ctx.store_id })
 }

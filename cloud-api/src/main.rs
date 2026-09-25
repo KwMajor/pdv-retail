@@ -48,7 +48,13 @@ async fn main() {
         }
     };
 
-    let state = AppState { pool, jwt };
+    // Docs OpenAPI SÓ fora de produção (US02 Task 2.5).
+    let expose_docs = matches!(cfg.app_env.as_str(), "development" | "test");
+    if !expose_docs {
+        tracing::info!("docs OpenAPI desativadas (APP_ENV={})", cfg.app_env);
+    }
+
+    let state = AppState { pool, jwt, expose_docs };
     let app = app_router(state);
 
     let addr = SocketAddr::from(([0, 0, 0, 0], cfg.port));
@@ -100,6 +106,7 @@ mod tests {
         AppState {
             pool,
             jwt: JwtKeys::from_secret("test-only-secret-com-mais-de-32-chars").unwrap(),
+            expose_docs: false,
         }
     }
 

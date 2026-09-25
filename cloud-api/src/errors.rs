@@ -2,7 +2,15 @@
 //! nunca vazar PII ou detalhe interno no JSON público.
 
 use axum::{Json, http::StatusCode, response::IntoResponse};
-use serde_json::json;
+use serde::Serialize;
+
+/// Envelope de erro de TODAS as rotas (US02 Task 2.5: schema único no Swagger).
+/// Nunca carrega detalhe interno, PII, hashes ou tokens — só código e mensagem.
+#[derive(Debug, Clone, Serialize, utoipa::ToSchema)]
+pub struct ErrorBody {
+    pub code: String,
+    pub message: String,
+}
 
 #[derive(Debug, thiserror::Error)]
 // Variantes de auth serão consumidas na US02; mantém o build sem warnings até lá.
@@ -47,7 +55,7 @@ impl IntoResponse for AppError {
         if matches!(self, AppError::Db(_) | AppError::Internal(_)) {
             tracing::error!(?self, "app error");
         }
-        (status, Json(json!({"code": code, "message": message}))).into_response()
+        (status, Json(ErrorBody { code: code.to_string(), message })).into_response()
     }
 }
 
