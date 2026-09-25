@@ -86,4 +86,15 @@ Para otimizar nosso tempo e os tokens de contexto:
 
 ---
 
+## 8. Fluxo Git (obrigatório — evita proliferação de branches e MRs quebrados)
+*   **1 branch por User Story, criada a partir da `dev`:** nome `us-XX-slug` (ex: `us-02-autenticacao-e-perfis`). NUNCA criar branch por task (`us-02-task-2-3`) nem trabalhar direto na `dev`/`main`.
+*   **1 commit por task:** mensagem `feat: US-XX task Y.Z <resumo>` (ex: `feat: US-02 task 2.3 com rbac fullstack`). Correções locais da mesma task devem ser incorporadas ao commit dela (amend/rebase) ANTES do push, para o histórico remoto ter exatamente 1 commit por task.
+*   **Push ao concluir cada task** (commit + `git push`), sem esperar a US inteira.
+*   **1 PR por US** (branch → `dev`). Preferir merge commit (preserva os commits por task); se o projeto adotar squash, apagar a branch logo após o merge.
+*   **NUNCA reutilizar branch já mergeada:** continuar commitando nela após o merge recria divergência (foi o que quebrou o MR da `fix/us01-unit-cost` com conflito `add/add`). Follow-ups de US já mergeada vão em `fix/us-XX-assunto` (a partir da `dev` atual).
+*   **Limpeza:** após merge confirmado na `dev` (conferir com `git merge-base --is-ancestor`), apagar a branch local e remota (`git push origin --delete <branch>` + `git branch -d`). Nunca apagar branch com trabalho exclusivo não mergeado sem confirmação explícita do usuário.
+*   **Segurança no stage:** antes de commitar, conferir `git status`/`git diff` e nunca incluir segredos (`.env`, `*.pfx`, `*.pem`, `*.key`). Sem `force-push` sem pedido explícito.
+
+---
+
 **Instrução Operacional:** Ao ser requisitado para gerar código, entregue implementações modulares, limpas, comentadas onde necessário e seguindo as melhores práticas idiomáticas do Rust e do React. Sempre considere os impactos de performance, segurança e concorrência na arquitetura proposta.

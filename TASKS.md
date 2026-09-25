@@ -85,6 +85,17 @@ O controle de quem opera o caixa e de quem gerencia a loja é a base da seguran�
 **Cenários de Teste (QA & Segurança):**
 *   **Isolamento de Memória:** Inspecionar o Application tab do Developer Tools do WebView2. Não deve haver traços do token em texto plano.
 
+#### Task 2.5: Documentação OpenAPI/Swagger do Backend
+**Descrição:** Expor a documentação viva das rotas da Cloud API (o que entra e o que sai de cada uma), gerada a partir do próprio código para nunca divergir.
+**Critérios de Aceite (DoD):**
+*   [ ] As rotas existentes (`/health`, `/ready`, `/api/v1/ping`, `/api/v1/users`, `/api/v1/me`, `/api/v1/auth/login`) devem estar anotadas com `utoipa`: para cada rota, documentar **o que entra** (body schema + exemplo, path/query params, header `Authorization: Bearer` e `role` exigida) e **o que sai** (response schema + exemplo + status por caso de sucesso 200/201 e cada erro retornável do envelope `{code, message}`: 400/401/403/404/409/422).
+*   [ ] Servir `openapi.json` + Swagger UI **somente em ambiente dev/teste** (nunca em produção).
+*   [ ] Teste anti-drift: listar as rotas do `app_router` e falhar se alguma não tiver entrada no OpenAPI.
+*   [ ] Nenhum exemplo de request/response pode conter hashes, tokens reais, segredos ou PII.
+**Cenários de Teste (QA):**
+*   **Happy Path:** Abrir o Swagger UI em dev, executar `POST /api/v1/auth/login` pelo próprio UI e usar o token no cadeado de autorização das demais rotas.
+*   **Security Case:** Inspecionar o `openapi.json` — nenhum schema/endpoint de produção expõe a UI de docs.
+
 ### US03: Catálogo de Produtos e Parâmetros Fiscais
 **Épico:** Fundação SaaS | **Componente:** Fullstack (Rust/React) | **Risco:** Médio (Integridade Fiscal e Contábil)
 
@@ -97,6 +108,7 @@ O cadastro de produtos é o coração da operação. A SEFAZ exige rigor absolut
 *   [ ] O endpoint `POST /products` deve validar se o `ncm_code` possui exatamente 8 dígitos numéricos.
 *   [ ] O endpoint `DELETE /products/:id` não deve executar exclusão física. Deve atualizar a coluna `is_active = false` (Soft Delete).
 *   [ ] A listagem `GET /products` deve retornar apenas produtos onde `is_active = true` e `store_id` corresponda ao tenant do usuário autenticado.
+*   [ ] DoD API Docs (Task 2.5): a(s) nova(s) rota(s) deve(m) sair anotada(s) no Swagger com request/response schemas + exemplos, incluindo todos os códigos de erro retornáveis; o teste anti-drift deve continuar verde.
 **Cenários de Teste (QA & Segurança):**
 *   **Edge Case:** Tentar enviar um NCM com letras ou tamanho incorreto. A API deve retornar HTTP 422 Unprocessable Entity.
 *   **Security Case:** Acessar a rota `DELETE` com papel de `CASHIER`. O middleware deve bloquear (HTTP 403), permitindo apenas `MANAGER` ou `ADMIN`.
@@ -138,6 +150,7 @@ O estoque não é apenas um número estático; é uma conta corrente. Não podem
 **Critérios de Aceite (DoD):**
 *   [ ] Endpoint `POST /stock/adjust` que recebe um array de itens, quantidades e o motivo do ajuste.
 *   [ ] Permissão estrita para perfis gerenciais.
+*   [ ] DoD API Docs (Task 2.5): a(s) nova(s) rota(s) deve(m) sair anotada(s) no Swagger com request/response schemas + exemplos, incluindo todos os códigos de erro retornáveis; o teste anti-drift deve continuar verde.
 **Cenários de Teste (QA):**
 *   **Edge Case:** Tentar inserir um ajuste que deixe o saldo negativo em produtos não configurados para permitir saldo negativo. A transação deve falhar e alertar o usuário.
 
@@ -202,6 +215,7 @@ Clientes frequentemente dividem o pagamento (ex: metade no cartão, metade em di
 *   [ ] O payload deve receber um array de objetos `payments` contendo `method`, `tendered_amount` (valor entregue) e `amount` (valor consumido).
 *   [ ] O backend deve iterar sobre o array e somar o `amount` de cada método. A venda só pode ser registrada se a soma exata dos `amount` for igual ao `total_amount` (líquido) da venda.
 *   [ ] Se o método for diferente de `CASH` (Dinheiro), o `tendered_amount` não pode ser maior que o `amount` (não há troco em PIX/Cartão).
+*   [ ] DoD API Docs (Task 2.5): a(s) nova(s) rota(s) deve(m) sair anotada(s) no Swagger com request/response schemas + exemplos, incluindo todos os códigos de erro retornáveis; o teste anti-drift deve continuar verde.
 **Cenários de Teste (QA & Segurança):**
 *   **Edge Case (Pagamento Menor):** Enviar array totalizando R$ 40 para uma venda de R$ 50. A API deve barrar com HTTP 422.
 *   **Security Case (Fraude de Troco):** Tentar enviar `tendered_amount = 100` e `amount = 50` em um pagamento via `PIX`. A transação deve ser bloqueada.
@@ -244,6 +258,7 @@ Para assinar XMLs com valor legal, a API precisa do certificado digital e-CNPJ (
 *   [ ] O arquivo `.pfx` deve ser validado via parse antes de ser salvo (para garantir que não é um malware renomeado).
 *   [ ] A senha do certificado (`certificate_password`) deve ser criptografada em repouso no banco de dados usando uma chave mestra (AES-256) armazenada nas variáveis de ambiente (`.env`) do servidor. Não deve ficar em texto plano.
 *   [ ] Acesso a esta tela e rota é exclusivo para o papel `ADMIN/DONO`.
+*   [ ] DoD API Docs (Task 2.5): a(s) nova(s) rota(s) deve(m) sair anotada(s) no Swagger com request/response schemas + exemplos, incluindo todos os códigos de erro retornáveis; o teste anti-drift deve continuar verde.
 **Cenários de Teste (Security):**
 *   **Security Case:** Tentar baixar ou visualizar a senha do certificado através de uma rota `GET`. A API nunca deve expor a senha de volta ao frontend; ela é usada apenas internamente pelo motor fiscal.
 
@@ -286,6 +301,7 @@ No 1º dia útil de cada mês, o dono da loja precisa enviar todas as notas emit
 *   [ ] Rota `GET /fiscal/export?month=10&year=2026`.
 *   [ ] O backend deve buscar todas as vendas do `store_id` daquele período que possuem `fiscal_xml_url` e agrupar em um único `.zip`.
 *   [ ] O arquivo deve ser montado na memória (Stream) e servido como download, sem onerar o disco do servidor na nuvem.
+*   [ ] DoD API Docs (Task 2.5): a(s) nova(s) rota(s) deve(m) sair anotada(s) no Swagger com request/response schemas + exemplos, incluindo todos os códigos de erro retornáveis; o teste anti-drift deve continuar verde.
 
 ---
 
@@ -338,6 +354,7 @@ O dinheiro na gaveta precisa bater centavo por centavo com o que o sistema regis
 *   [ ] Rota `POST /shifts/open` deve receber o `opening_balance`. O sistema deve validar se o `cashier_id` já possui um turno com `closed_at = null`. Se sim, rejeitar com HTTP 409 Conflict.
 *   [ ] O endpoint de registro de Venda (`POST /sales`) agora deve verificar se o caixa autenticado possui um turno aberto. Se não possuir, a venda deve ser bloqueada.
 *   [ ] Rota `POST /shifts/close` deve receber o `actual_closed_balance` (declarado pelo operador). O backend calcula a diferença entre o esperado e o declarado e encerra o turno carimbando a data final.
+*   [ ] DoD API Docs (Task 2.5): a(s) nova(s) rota(s) deve(m) sair anotada(s) no Swagger com request/response schemas + exemplos, incluindo todos os códigos de erro retornáveis; o teste anti-drift deve continuar verde.
 **Cenários de Teste (QA):**
 *   **Edge Case:** Tentar registrar uma venda no turno do dia anterior que o operador esqueceu de fechar, mas após 24h. O sistema deve alertar o gerente.
 *   **Security Case:** Tentar forçar o fechamento de um turno pertencente a outro operador através de manipulação de payload. O backend deve barrar comparando o token JWT.
@@ -362,6 +379,7 @@ Durante o expediente, pode faltar troco (Suprimento: o gerente coloca mais R$ 10
 *   [ ] Rota `POST /shifts/movement` exigindo `movement_type` (SANGRIA, SUPRIMENTO) e um motivo obrigatório (`description`).
 *   [ ] Deve vincular obrigatoriamente a um `shift_id` em aberto.
 *   [ ] Inserir uma trava: O valor de uma Sangria nunca pode ser superior ao valor atual em dinheiro físico (`CASH`) calculado pelo sistema naquele momento do turno.
+*   [ ] DoD API Docs (Task 2.5): a(s) nova(s) rota(s) deve(m) sair anotada(s) no Swagger com request/response schemas + exemplos, incluindo todos os códigos de erro retornáveis; o teste anti-drift deve continuar verde.
 **Cenários de Teste (QA):**
 *   **Edge Case:** Tentar sangrar R$ 500 quando a gaveta tem apenas R$ 300 registrados (Fundo Inicial + Vendas em Dinheiro). A API deve impedir com HTTP 422.
 
@@ -379,6 +397,7 @@ O varejista precisa saber se a loja está dando lucro. Para isso, não basta reg
 *   [ ] Rota `POST /suppliers` validando `cnpj_cpf` do fornecedor ou produtor rural.
 *   [ ] Rota `POST /expenses` para registrar o boleto, contendo `due_date`, `amount` e status (`PENDING` ou `PAID`).
 *   [ ] Se uma despesa for paga utilizando dinheiro da gaveta do caixa, o endpoint de pagamento deve, na mesma transação SQLx, inserir um `CASH_MOVEMENT` (tipo DESPESA) no turno ativo correspondente.
+*   [ ] DoD API Docs (Task 2.5): a(s) nova(s) rota(s) deve(m) sair anotada(s) no Swagger com request/response schemas + exemplos, incluindo todos os códigos de erro retornáveis; o teste anti-drift deve continuar verde.
 **Cenários de Teste (QA):**
 *   **Integração Contábil:** Pagar uma despesa de R$ 50 com dinheiro do caixa. Verificar se, no fechamento do turno, o valor esperado em dinheiro caiu em exatos R$ 50, não causando "falta" para o operador.
 
@@ -396,6 +415,7 @@ O dono da loja quer acessar a retaguarda web de casa e ver um gráfico mostrando
 *   [ ] Criar endpoint `GET /reports/cashflow?start_date=X&end_date=Y`.
 *   [ ] A consulta SQL deve cruzar a tabela `SALE` (status = COMPLETED) somando os recebimentos, subtraindo o custo da mercadoria (`cost_price` histórico na tabela de produtos, se rastreado) e subtraindo a tabela `EXPENSE` (status = PAID).
 *   [ ] Utilizar índices adequados no PostgreSQL (ex: criar um índice em `created_at` na tabela `SALE`) para que a consulta de um ano inteiro não dê *timeout*.
+*   [ ] DoD API Docs (Task 2.5): a(s) nova(s) rota(s) deve(m) sair anotada(s) no Swagger com request/response schemas + exemplos, incluindo todos os códigos de erro retornáveis; o teste anti-drift deve continuar verde.
 **Cenários de Teste (Performance):**
 *   **Stress Test:** Popular o banco de dados com 100.000 vendas fictícias utilizando um script. Chamar a rota do relatório consolidado e garantir que ela responda em menos de 800ms.
 
@@ -447,6 +467,7 @@ Chegou o final do mês. O "Seu João" vem à loja pagar a conta que acumulou R$ 
 *   [ ] O backend altera o status dessas vendas de `PENDING` para `COMPLETED`.
 *   [ ] O backend injeta as vendas pagas na fila de geração de XML (US10) de forma assíncrona.
 *   [ ] Nenhuma alteração no `STOCK` deve ocorrer aqui, pois já foi reduzido na US18.
+*   [ ] DoD API Docs (Task 2.5): a(s) nova(s) rota(s) deve(m) sair anotada(s) no Swagger com request/response schemas + exemplos, incluindo todos os códigos de erro retornáveis; o teste anti-drift deve continuar verde.
 
 ---
 
@@ -484,3 +505,4 @@ Toda operação que gera risco financeiro para a loja (desconto exagerado, estou
 *   [ ] A API varre a tabela `USER` buscando usuários ativos com `role = 'MANAGER' ou 'ADMIN'` no mesmo `store_id` e compara os hashes (Argon2).
 *   [ ] Em caso de sucesso, insere o registro na tabela `AUDIT_LOG` apontando qual gerente liberou qual ação para qual caixa.
 *   [ ] Retorna um token ou assinatura de uso único (One-Time Pass) para que o frontend anexe ao payload da venda/cancelamento, provando para a API que a ação foi autorizada legitimamente (prevenindo bypass via Postman/cURL).
+*   [ ] DoD API Docs (Task 2.5): a(s) nova(s) rota(s) deve(m) sair anotada(s) no Swagger com request/response schemas + exemplos, incluindo todos os códigos de erro retornáveis; o teste anti-drift deve continuar verde.
