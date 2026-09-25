@@ -19,7 +19,10 @@ use crate::repositories::{NewUser, PgUserRepository, UserRepository};
 
 /// Senha de acesso (não é o PIN numérico do gerente, que tem fluxo próprio).
 const PASSWORD_MIN_CHARS: usize = 8;
-const PASSWORD_MAX_CHARS: usize = 128;
+pub(crate) const PASSWORD_MAX_CHARS: usize = 128;
+/// Tetos alinhados ao banco (`VARCHAR(255)`): acima disso seria 500 do PG.
+const NAME_MAX_CHARS: usize = 255;
+const EMAIL_MAX_CHARS: usize = 255;
 
 pub struct CreateUserInput {
     pub name: String,
@@ -53,9 +56,15 @@ pub async fn create_user(
     if name.is_empty() {
         return Err(CreateUserError::Invalid("nome é obrigatório".to_string()));
     }
+    if name.chars().count() > NAME_MAX_CHARS {
+        return Err(CreateUserError::Invalid("nome deve ter no máximo 255 caracteres".to_string()));
+    }
     let email = input.email.trim().to_lowercase();
     if email.is_empty() || !email.contains('@') {
         return Err(CreateUserError::Invalid("email inválido".to_string()));
+    }
+    if email.chars().count() > EMAIL_MAX_CHARS {
+        return Err(CreateUserError::Invalid("email deve ter no máximo 255 caracteres".to_string()));
     }
     let password_chars = input.password.chars().count();
     if password_chars < PASSWORD_MIN_CHARS {

@@ -41,6 +41,11 @@ pub async fn login(
     input: LoginInput,
 ) -> Result<LoginOutput, LoginError> {
     let email = input.email.trim().to_lowercase();
+    // Teto igual ao do cadastro: acima disso nunca é credencial válida.
+    // Cai no erro genérico (sem oráculo) e nem chega ao Argon2.
+    if input.password.chars().count() > super::user_service::PASSWORD_MAX_CHARS {
+        return Err(LoginError::Invalid);
+    }
     let found = repo.find_by_email(store_id, &email).await?;
 
     let user = match found {

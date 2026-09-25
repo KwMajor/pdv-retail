@@ -371,10 +371,13 @@ async fn validacoes_basicas_retornam_400() {
     let p = pool().await;
     let store = mk_store(&p, &uniq("v21")).await;
     let token = manager_token(&p, &store).await;
+    let longo = "x".repeat(300);
     for (caso, payload) in [
         ("senha curta", json!({"name": "F", "email": uniq("v21@loja"), "password": "123", "role": "cashier"})),
         ("email sem @", json!({"name": "F", "email": "sem-arroba", "password": "segredo-123", "role": "cashier"})),
         ("nome vazio", json!({"name": "  ", "email": uniq("v21@loja"), "password": "segredo-123", "role": "cashier"})),
+        ("nome >255", json!({"name": longo, "email": uniq("v21@loja"), "password": "segredo-123", "role": "cashier"})),
+        ("email >255", json!({"name": "F", "email": format!("{}@loja.exemplo", longo), "password": "segredo-123", "role": "cashier"})),
     ] {
         let (status, json) = corpo(
             app_with_db(p.clone()).oneshot(post_users(&token, payload)).await.unwrap(),
