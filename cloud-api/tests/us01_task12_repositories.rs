@@ -233,7 +233,7 @@ async fn sale_item_snapshot_e_payment_via_repo() {
     let products = PgProductRepository::new(pool.clone());
     let sales = PgSaleRepository::new(pool.clone());
     let items = PgSaleItemRepository::new(pool.clone());
-    let payments = PgPaymentRepository::new(pool);
+    let payments = PgPaymentRepository::new(pool.clone());
     let tag = uniq("v12");
     let store = stores
         .create(NewStoreSettings {
@@ -249,7 +249,7 @@ async fn sale_item_snapshot_e_payment_via_repo() {
             barcode: None,
             name: "Leite".into(),
             price: dec(599),
-            cost: Decimal::ZERO,
+            cost: dec(350),
             ncm: Some("04012010".into()),
             cest: None,
             cfop: Some("5102".into()),
@@ -281,6 +281,8 @@ async fn sale_item_snapshot_e_payment_via_repo() {
             product_id: product.id,
             quantity: Decimal::ONE,
             unit_price: dec(599),
+            // Mapeamento explícito de product.cost (regra anti-NULL).
+            unit_cost_price: dec(350),
             discount: Decimal::ZERO,
             total: dec(599),
             ncm_code: Some("04012010".into()),
@@ -292,8 +294,15 @@ async fn sale_item_snapshot_e_payment_via_repo() {
         .await
         .unwrap();
     products.set_price(store.id, product.id, dec(799)).await.unwrap();
+    sqlx::query("UPDATE product SET cost = $1 WHERE id = $2::uuid")
+        .bind(dec(400))
+        .bind(product.id)
+        .execute(&pool)
+        .await
+        .unwrap();
     let frozen = items.find_by_id(store.id, item.id).await.unwrap().unwrap();
     assert_eq!(frozen.unit_price, dec(599));
+    assert_eq!(frozen.unit_cost_price, dec(350), "custo congelado na venda");
     assert_eq!(frozen.ncm_code.as_deref(), Some("04012010"));
     assert_eq!(items.list_by_sale(store.id, sale.id).await.unwrap().len(), 1);
 
@@ -387,6 +396,7 @@ async fn cross_tenant_barrado_no_banco_via_repo() {
             product_id: product.id,
             quantity: Decimal::ONE,
             unit_price: dec(100),
+            unit_cost_price: Decimal::ZERO,
             discount: Decimal::ZERO,
             total: dec(100),
             ncm_code: None,
@@ -409,6 +419,86 @@ async fn cross_tenant_barrado_no_banco_via_repo() {
         .await
         .unwrap_err();
     assert!(pay_err.to_string().contains("violates") || pay_err.to_string().contains("foreign"));
+}
+
+#[tokio::test]
+async fn sale_item_congela_custo_para_lucro_bruto() {
+    // Fix US01 (TASKS.md): lucro futuro usa o custo CONGELADO, nunca o atual.
+    // 2 un a R$ 5,99 com custo R$ 3,00 → lucro R$ 5,98 mesmo após o custo virar R$ 9,99.
+    let pool = fresh_pool().await;
+    let stores = PgStoreSettingsRepository::new(pool.clone());
+    let products = PgProductRepository::new(pool.clone());
+    let sales = PgSaleRepository::new(pool.clone());
+    let items = PgSaleItemRepository::new(pool.clone());
+    let tag = uniq("lc");
+    let store = stores
+        .create(NewStoreSettings { name: format!("Loja {tag}"), cnpj: format!("cnpj-{tag}") })
+        .await
+        .unwrap();
+    let product = products
+        .create(NewProduct {
+            store_id: store.id,
+            sku: uniq("LC"),
+            barcode: None,
+            name: "Custo".into(),
+            price: dec(599),
+            cost: dec(300),
+            ncm: None, cest: None, cfop: None, icms_origin: None,
+            icms_rate: Decimal::ZERO,
+        })
+        .await
+        .unwrap();
+    let sale = sales
+        .create(NewSale {
+            store_id: store.id,
+            customer_id: None,
+            anonymous_cpf_cnpj: None,
+            status: "closed".into(),
+            subtotal: dec(1198),
+            discount: Decimal::ZERO,
+            total: dec(1198),
+            change_amount: Decimal::ZERO,
+            created_by: None,
+        })
+        .await
+        .unwrap();
+    items
+        .create(NewSaleItem {
+            store_id: store.id,
+            sale_id: sale.id,
+            product_id: product.id,
+            quantity: Decimal::new(2, 0),
+            unit_price: dec(599),
+            // Mapeamento explícito do custo vigente (regra anti-NULL).
+            unit_cost_price: dec(300),
+            discount: Decimal::ZERO,
+            total: dec(1198),
+            ncm_code: None, cest: None, cfop: None, icms_origin: None,
+            icms_rate: Decimal::ZERO,
+        })
+        .await
+        .unwrap();
+
+    // Custo atual dispara — o item vendido não pode se mover.
+    sqlx::query("UPDATE product SET cost = $1 WHERE id = $2::uuid")
+        .bind(dec(999))
+        .bind(product.id)
+        .execute(&pool)
+        .await
+        .unwrap();
+
+    // Lucro bruto da venda (US17): SUM(qty*price - qty*cost_congelado).
+    // O SUM é Option por semântica SQL; com linhas e colunas NOT NULL, sempre Some.
+    let lucro: Option<Decimal> = sqlx::query_scalar(
+        "SELECT SUM(quantity * unit_price - quantity * unit_cost_price)
+         FROM sale_item WHERE store_id = $1::uuid AND sale_id = $2::uuid",
+    )
+    .bind(store.id)
+    .bind(sale.id)
+    .fetch_one(&pool)
+    .await
+    .unwrap();
+    assert_eq!(lucro.unwrap(), dec(598), "lucro usa o custo congelado (5.99-3.00)*2");
 }
 
 /// Security Case (injeção): nenhum arquivo de `src/repositories/` pode montar

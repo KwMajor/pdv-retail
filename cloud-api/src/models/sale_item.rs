@@ -13,6 +13,8 @@ pub struct SaleItem {
     pub product_id: Uuid,
     pub quantity: Decimal,
     pub unit_price: Decimal,
+    /// Snapshot de `product.cost` na venda (lucro bruto). 0.00 se isento.
+    pub unit_cost_price: Decimal,
     pub discount: Decimal,
     pub total: Decimal,
     pub ncm_code: Option<String>,

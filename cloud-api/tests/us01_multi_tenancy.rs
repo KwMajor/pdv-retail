@@ -648,7 +648,7 @@ async fn sale_item_snapshot_desacoplado_do_produto() {
     let sale = mk_sale(&mut tx, &store).await;
     // Item congela fiscal DIFERENTE do atual (ex: regra antiga): permitido.
     sqlx::query(
-        "INSERT INTO sale_item(store_id, sale_id, product_id, quantity, unit_price, total, ncm_code, cfop, icms_rate) VALUES ($1::uuid, $2::uuid, $3::uuid, 1, 10, 10, '99999999', '6102', 4)",
+        "INSERT INTO sale_item(store_id, sale_id, product_id, quantity, unit_price, unit_cost_price, total, ncm_code, cfop, icms_rate) VALUES ($1::uuid, $2::uuid, $3::uuid, 1, 10, 6, 10, '99999999', '6102', 4)",
     )
     .bind(&store)
     .bind(&sale)
@@ -681,7 +681,7 @@ async fn sale_item_quantidade_positiva() {
     for qty in ["0", "-2"] {
         let sp = savepoint(&mut tx).await;
         let err = sqlx::query(&format!(
-            "INSERT INTO sale_item(store_id, sale_id, product_id, quantity, unit_price, total) VALUES ($1::uuid, $2::uuid, $3::uuid, {qty}, 10, 10)"
+            "INSERT INTO sale_item(store_id, sale_id, product_id, quantity, unit_price, unit_cost_price, total) VALUES ($1::uuid, $2::uuid, $3::uuid, {qty}, 10, 6, 10)"
         ))
         .bind(&store)
         .bind(&sale)
@@ -1299,7 +1299,7 @@ async fn sale_item_e_payment_exigem_store_id_e_bloqueiam_cross_tenant() {
     // Sem store_id: falha.
     let sp = savepoint(&mut tx).await;
     let err = sqlx::query(
-        "INSERT INTO sale_item(store_id, sale_id, product_id, quantity, unit_price, total) VALUES (NULL, $1::uuid, $2::uuid, 1, 10, 10)",
+        "INSERT INTO sale_item(store_id, sale_id, product_id, quantity, unit_price, unit_cost_price, total) VALUES (NULL, $1::uuid, $2::uuid, 1, 10, 6, 10)",
     )
     .bind(&sale_a)
     .bind(&prod_a)
@@ -1321,7 +1321,7 @@ async fn sale_item_e_payment_exigem_store_id_e_bloqueiam_cross_tenant() {
     // Cross-tenant (venda da loja A com store_id da loja B): FK composta barra.
     let sp = savepoint(&mut tx).await;
     let err = sqlx::query(
-        "INSERT INTO sale_item(store_id, sale_id, product_id, quantity, unit_price, total) VALUES ($1::uuid, $2::uuid, $3::uuid, 1, 10, 10)",
+        "INSERT INTO sale_item(store_id, sale_id, product_id, quantity, unit_price, unit_cost_price, total) VALUES ($1::uuid, $2::uuid, $3::uuid, 1, 10, 6, 10)",
     )
     .bind(&b)
     .bind(&sale_a)
