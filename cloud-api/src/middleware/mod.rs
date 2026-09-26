@@ -1,9 +1,10 @@
 //! Extractors/middlewares HTTP da Cloud API.
 //!
-//! Nesta US mora o [`tenant::TenantContext`]. Na US02 a fonte do `store_id`
-//! migra do header temporário `X-Store-ID` para o payload do JWT — a
-//! assinatura do extractor (e portanto todos os handlers) permanece igual.
+//! - [`tenant::TenantContext`]: identidade JWT (`store_id` + `user_id` + `role`).
+//! - [`store_hint::StoreHint`]: dica NÃO autenticada, só para o login.
 
+pub mod store_hint;
 pub mod tenant;
 
-pub use tenant::{STORE_ID_HEADER, StoreHint, TenantContext};
+pub use store_hint::StoreHint;
+pub use tenant::{STORE_ID_HEADER, TenantContext};

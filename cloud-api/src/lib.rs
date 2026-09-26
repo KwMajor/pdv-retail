@@ -49,7 +49,7 @@ pub fn app_router(state: AppState) -> Router {
         .route(routes::PING, get(controllers::ping::ping))
         .route(routes::USERS, post(controllers::users::create_user_handler))
         .route(routes::ME, get(controllers::users::me_handler))
-        .route(routes::LOGIN, post(controllers::auth::login_handler))
+        .route(routes::LOGIN, post(controllers::session::login_handler))
         .route(
             routes::PRODUCTS,
             post(controllers::products::create_product_handler)

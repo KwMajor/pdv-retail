@@ -9,7 +9,7 @@ use axum::{Json, extract::State};
 use crate::errors::AppError;
 use crate::middleware::StoreHint;
 use crate::repositories::PgUserRepository;
-use crate::services::auth_service::{LoginError, LoginInput, login};
+use crate::services::session_service::{LoginError, LoginInput, login};
 
 use super::users::UserResponse;
 

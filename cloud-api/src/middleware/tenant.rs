@@ -80,34 +80,6 @@ impl FromRequestParts<AppState> for TenantContext {
     }
 }
 
-/// Dica de loja para o login (NÃO autenticada — só localiza o tenant).
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct StoreHint {
-    pub store_id: Uuid,
-}
-
-#[async_trait::async_trait]
-impl FromRequestParts<AppState> for StoreHint {
-    type Rejection = AppError;
-
-    async fn from_request_parts(
-        parts: &mut Parts,
-        _state: &AppState,
-    ) -> Result<Self, Self::Rejection> {
-        let raw = parts
-            .headers
-            .get(STORE_ID_HEADER)
-            .ok_or_else(|| AppError::BadRequest("header X-Store-ID ausente".to_string()))?;
-        let text = raw.to_str().map_err(|_| {
-            AppError::BadRequest("header X-Store-ID inválido: UUID esperado".to_string())
-        })?;
-        let store_id = text.parse::<Uuid>().map_err(|_| {
-            AppError::BadRequest("header X-Store-ID inválido: UUID esperado".to_string())
-        })?;
-        Ok(Self { store_id })
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -234,22 +206,6 @@ mod tests {
         assert_eq!(
             status_of(extract(&[("authorization", &auth)]).await.unwrap_err()),
             StatusCode::UNAUTHORIZED
-        );
-    }
-
-    #[tokio::test]
-    async fn store_hint_so_para_login() {
-        let id = Uuid::new_v4().to_string();
-        let mut parts = parts_with(&[(STORE_ID_HEADER, &id)]);
-        let hint = StoreHint::from_request_parts(&mut parts, &state())
-            .await
-            .unwrap();
-        assert_eq!(hint.store_id.to_string(), id);
-        let mut sem = parts_with(&[]);
-        assert!(
-            StoreHint::from_request_parts(&mut sem, &state())
-                .await
-                .is_err()
         );
     }
 

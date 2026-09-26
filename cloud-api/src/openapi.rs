@@ -9,7 +9,7 @@
 use utoipa::openapi::security::{HttpAuthScheme, HttpBuilder, SecurityScheme};
 use utoipa::{Modify, OpenApi};
 
-use crate::controllers::{auth, health, ping, products, users};
+use crate::controllers::{health, ping, products, session, users};
 use crate::errors::ErrorBody;
 use crate::models::UserRole;
 
@@ -67,7 +67,7 @@ impl Modify for SecurityAddon {
         ping::ping,
         users::create_user_handler,
         users::me_handler,
-        auth::login_handler,
+        session::login_handler,
         products::create_product_handler,
         products::list_products_handler,
         products::get_product_handler,
@@ -81,8 +81,8 @@ impl Modify for SecurityAddon {
             ping::PingResponse,
             users::CreateUserRequest,
             users::UserResponse,
-            auth::LoginRequest,
-            auth::LoginResponse,
+            session::LoginRequest,
+            session::LoginResponse,
             products::CreateProductRequest,
             products::UpdateProductRequest,
             products::ListProductsQuery,

@@ -68,6 +68,13 @@ O projeto opera em um Monorepo. Respeite estritamente esta estrutura ao criar ou
     *   `/src-tauri/src/commands/` (Funções Rust locais chamadas via IPC pelo React)
     *   `/src-tauri/src/hardware/` (Integração USB, Impressora, Balança)
 
+### Convenção de Nomes (legibilidade humana)
+*   **Um stem de domínio por camada, nunca dois conceitos no mesmo arquivo:** `models/user.rs` (struct), `repositories/user.rs` (trait+impl SQL), `services/user_service.rs` (regra), `controllers/users.rs` (rotas REST, plural). Referencie sempre pelo path completo (`models::User` vs `repositories::...`); nunca importe dois stems iguais sem alias.
+*   **Núcleo nomeado pelo que É, não pela camada:** JWT vive em `jwt.rs` (não `auth.rs`, que colidiria com controller/service); OpenAPI em `openapi.rs` (não `docs.rs`); extractors com responsabilidade única (`tenant.rs` = JWT, `store_hint.rs` = dica de login).
+*   **Proibidos nomes genéricos:** `utils.rs`, `helpers.rs`, `common.ts`, `misc.rs`, `data.rs`. Se o nome não diz o domínio, o arquivo está no lugar errado.
+*   **Testes espelham o TASKS.md:** `tests/usXX_taskYY_assunto.rs` (ex: `us03_task31_products.rs`).
+*   **Migrations:** `NNN_descritivo_curto.sql`, sempre aditivas após aplicadas (nunca editar `001`).
+
 ---
 
 ## 6. Padrões de Comunicação e Tratamento de Erros
