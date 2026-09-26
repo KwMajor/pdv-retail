@@ -84,7 +84,6 @@ export function fieldError(
     case "name":
       if (v === "") return "Nome é obrigatório.";
       if (v.length > 255) return "Nome deve ter no máximo 255 caracteres.";
-      // eslint-disable-next-line no-control-regex
       return /[\u0000-\u001F\u007F]/.test(v)
         ? "Nome contém caracteres inválidos."
         : null;

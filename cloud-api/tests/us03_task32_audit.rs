@@ -333,6 +333,36 @@ async fn falha_no_log_desfaz_o_update() {
 }
 
 #[tokio::test]
+async fn audit_nunca_carrega_credencial_ou_segredo() {
+    // LGPD: old/new_data guardam SÓ dado fiscal. Mesmo com usuário criado
+    // (senha!) e preço alterado na mesma loja, nada sensível pode vazar.
+    let p = pool().await;
+    let store = mk_store(&p, &uniq("hg")).await;
+    let (gerente, _) = manager_login(&p, &store).await;
+
+    let (s, j) = call(&p, &gerente, "POST", "/api/v1/products", Some(produto(&uniq("HG"), 10.00))).await;
+    assert_eq!(s, StatusCode::CREATED);
+    let id = j["id"].as_str().unwrap().to_string();
+    let (s, _) = call(&p, &gerente, "PUT", &format!("/api/v1/products/{id}"), Some(json!({"price": 11.00}))).await;
+    assert_eq!(s, StatusCode::OK);
+
+    let raw: Vec<(String, Option<Value>, Option<Value>)> = sqlx::query_as(
+        "SELECT action, old_data, new_data FROM audit_log WHERE store_id = $1::uuid",
+    )
+    .bind(&store)
+    .fetch_all(&p)
+    .await
+    .unwrap();
+    assert!(!raw.is_empty());
+    for (action, old, new) in &raw {
+        let blob = format!("{action}{old:?}{new:?}").to_lowercase();
+        for proibido in ["password_hash", "pin_hash", "segredo", "argon2", "bearer ", "jwt_secret"] {
+            assert!(!blob.contains(proibido), "auditoria vazou {proibido}: {blob}");
+        }
+    }
+}
+
+#[tokio::test]
 async fn put_em_produto_inexistente_404_sem_efeito() {
     let p = pool().await;
     let store = mk_store(&p, &uniq("x32")).await;

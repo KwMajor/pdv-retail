@@ -27,6 +27,8 @@ jobs:
         working-directory: cloud-api
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
       - uses: dtolnay/rust-toolchain@6bed0761d98439e5a578e2877258200ad565ba87 # stable
         with:
           components: clippy, rustfmt
@@ -62,6 +64,8 @@ jobs:
       APP_ENV: test
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
       - uses: dtolnay/rust-toolchain@6bed0761d98439e5a578e2877258200ad565ba87 # stable
       - uses: Swatinem/rust-cache@49a0bdc70d2e1b713ca9e2869b211fcce03d3c1c # v2
         with:
@@ -83,6 +87,8 @@ jobs:
       contents: read
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
       - uses: EmbarkStudios/cargo-deny-action@b66acf5e9fe20f8aba065be86778a8a4c846f902 # v2
         with:
           manifest-path: cloud-api/Cargo.toml
@@ -100,15 +106,34 @@ jobs:
         working-directory: desktop-client
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: 20
           cache: npm
           cache-dependency-path: desktop-client/package-lock.json
       - run: npm ci --ignore-scripts
+      - run: npm run lint
       - run: ./node_modules/.bin/tsc --noEmit
       - run: npm run build
       - run: npm audit --omit=dev --audit-level=moderate
+
+  actions-security:
+    name: zizmor (workflows)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@6bed0761d98439e5a578e2877258200ad565ba87 # stable
+      - uses: Swatinem/rust-cache@49a0bdc70d2e1b713ca9e2869b211fcce03d3c1c # v2
+        with:
+          shared-key: ci
+      - name: install zizmor
+        run: command -v zizmor >/dev/null || cargo install zizmor --locked
+      - run: zizmor --no-online-audits .github/workflows
 
   semgrep:
     name: semgrep (bloqueante)
@@ -119,6 +144,8 @@ jobs:
       security-events: write
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
       - name: scan
         run: |
           pip install --quiet semgrep

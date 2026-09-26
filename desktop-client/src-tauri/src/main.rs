@@ -5,7 +5,9 @@
 
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-use pdv_desktop::commands::{VaultState, clear_session_token, load_session_token, save_session_token};
+use pdv_desktop::commands::{
+    clear_session_token, load_session_token, save_session_token, VaultState,
+};
 
 fn main() {
     tauri::Builder::default()
