@@ -58,6 +58,49 @@ rules:
     metadata:
       owasp: "A04:2021 - Insecure Design"
 
+  - id: money-sem-float
+    languages: [rust]
+    severity: ERROR
+    message: >-
+      Dinheiro/alíquota como f32/f64 perde centavos (binário ≠ decimal).
+      Use rust_decimal::Decimal em models e services.
+    paths:
+      include:
+        - cloud-api/src/models/**/*.rs
+        - cloud-api/src/services/**/*.rs
+    # Regex de propósito: casa o tipo em qualquer posição (campo, arg,
+    # retorno). Escopo curto (models/services) evita falso positivo.
+    patterns:
+      - pattern-regex: ':\s*f(32|64)\b'
+      - pattern-not-inside: |
+          #[cfg(test)]
+          mod tests {
+            ...
+          }
+    metadata:
+      owasp: "A04:2021 - Insecure Design"
+
+  - id: money-sem-from-float
+    languages: [rust]
+    severity: ERROR
+    message: >-
+      Decimal::from_f64/from_f32 arredonda binário-para-decimal.
+      Construa via parse/Decimal::new ou receba Decimal pronto.
+    paths:
+      include:
+        - cloud-api/src/**/*.rs
+    patterns:
+      - pattern-either:
+          - pattern: Decimal::from_f64(...)
+          - pattern: Decimal::from_f32(...)
+          - pattern: rust_decimal::Decimal::from_f64(...)
+          - pattern: rust_decimal::Decimal::from_f32(...)
+      - pattern-not-inside: |
+          #[cfg(test)]
+          mod tests {
+            ...
+          }
+
   - id: prod-sem-println-dbg
     languages: [rust]
     severity: ERROR

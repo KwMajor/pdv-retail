@@ -21,9 +21,10 @@ impl FromRequestParts<AppState> for StoreHint {
         parts: &mut Parts,
         _state: &AppState,
     ) -> Result<Self, Self::Rejection> {
-        let raw = parts.headers.get(STORE_ID_HEADER).ok_or_else(|| {
-            AppError::BadRequest("header X-Store-ID ausente".to_string())
-        })?;
+        let raw = parts
+            .headers
+            .get(STORE_ID_HEADER)
+            .ok_or_else(|| AppError::BadRequest("header X-Store-ID ausente".to_string()))?;
         let text = raw.to_str().map_err(|_| {
             AppError::BadRequest("header X-Store-ID inválido: UUID esperado".to_string())
         })?;

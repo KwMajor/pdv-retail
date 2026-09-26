@@ -9,7 +9,7 @@
 
 use axum::body::{Body, to_bytes};
 use axum::http::{Request, StatusCode};
-use pdv_cloud_api::{AppState, app_router,     jwt::JwtKeys, models::UserRole};
+use pdv_cloud_api::{AppState, app_router, jwt::JwtKeys, models::UserRole};
 use tower::ServiceExt;
 use uuid::Uuid;
 

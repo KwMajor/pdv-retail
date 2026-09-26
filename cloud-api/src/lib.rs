@@ -10,8 +10,8 @@
 
 pub mod config;
 pub mod controllers;
-pub mod jwt;
 pub mod errors;
+pub mod jwt;
 pub mod middleware;
 pub mod models;
 pub mod openapi;

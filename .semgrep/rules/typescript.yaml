@@ -9,7 +9,8 @@ rules:
       + cofre via IPC). Nem em comentário: o guard de teste varre literais.
     paths:
       include:
-        - desktop-client/src/**/*.{ts,tsx}
+        - desktop-client/src/**/*.ts
+        - desktop-client/src/**/*.tsx
     patterns:
       - pattern-either:
           - pattern: localStorage
@@ -25,10 +26,40 @@ rules:
       se HTML for inevitável, sanitize + revisão explícita.
     paths:
       include:
-        - desktop-client/src/**/*.{ts,tsx}
+        - desktop-client/src/**/*.ts
+        - desktop-client/src/**/*.tsx
     pattern: dangerouslySetInnerHTML
     metadata:
       owasp: "A03:2021 - Injection"
+
+  - id: ts-sem-any
+    languages: [typescript]
+    severity: ERROR
+    message: >-
+      `any` desliga o type-checker (vaza erro de domínio p/ produção).
+      Type o dado (union, interface, unknown + narrowing).
+    paths:
+      include:
+        - desktop-client/src/**/*.ts
+        - desktop-client/src/**/*.tsx
+    # Regex de propósito: casa o tipo em qualquer posição (anotação, arg,
+    # retorno, genérico). `$X as any` cobre casts.
+    patterns:
+      - pattern-either:
+          - pattern-regex: ':\s*any\b'
+          - pattern: $X as any
+
+  - id: ts-sem-non-null
+    languages: [typescript]
+    severity: ERROR
+    message: >-
+      Non-null assertion (`x!`) esconde nulo em runtime (tela branca no PDV).
+      Trate Option com early-return/optional chaining.
+    paths:
+      include:
+        - desktop-client/src/**/*.ts
+        - desktop-client/src/**/*.tsx
+    pattern: "$X!"
 
   - id: ts-sem-console-log
     languages: [typescript, javascript]
@@ -38,7 +69,8 @@ rules:
       do WebView). Use tratamento de erro visível ao operador.
     paths:
       include:
-        - desktop-client/src/**/*.{ts,tsx}
+        - desktop-client/src/**/*.ts
+        - desktop-client/src/**/*.tsx
     patterns:
       - pattern-either:
           - pattern: console.log(...)
