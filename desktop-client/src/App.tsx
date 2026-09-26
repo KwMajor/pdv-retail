@@ -8,6 +8,7 @@
 
 import { useEffect, useState } from "react";
 import { useSession } from "./stores/session";
+import { LoginForm } from "./components/LoginForm";
 import { RoleGate } from "./components/RoleGate";
 import { ProductForm } from "./components/ProductForm";
 import { ADMIN_ROLES, MANAGERIAL_ROLES } from "./auth/roles";
@@ -23,7 +24,7 @@ export function App() {
   }, [restore]);
 
   if (!ready) return <p>Carregando sessão…</p>;
-  if (!user) return <p>Sessão expirada — faça login novamente.</p>;
+  if (!user) return <LoginForm />;
 
   return (
     <div>
