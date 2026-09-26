@@ -17,6 +17,14 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 # shellcheck disable=SC1091
 source "$ROOT/scripts/lib/common.sh"
 
+for arg in "$@"; do
+  case "$arg" in
+    -h|--help)
+      sed -n '2,14p' "${BASH_SOURCE[0]}" | sed 's/^# //; s/^#//'
+      exit 0
+      ;;
+  esac
+done
 parse_common_flags "$@" || { echo "uso: $0 [--yes]" >&2; exit 1; }
 
 # --- 0. sudo (1x) ------------------------------------------------------------

@@ -11,6 +11,8 @@
 NODE_VERSION="20.19.0"
 
 # --- flags -------------------------------------------------------------------
+# NOTA HONESTA: installs apt já rodam com `-y` sempre; `--yes` existe por
+# compatibilidade (CI/scripts) e como reserva para prompts futuros.
 ASSUME_YES=0
 parse_common_flags() {
   for arg in "$@"; do
@@ -24,10 +26,11 @@ parse_common_flags() {
 }
 
 # --- log ---------------------------------------------------------------------
-info() { printf '\033[1;34m[setup]\033[0m %s\n' "$*"; }
-warn() { printf '\033[1;33m[setup]\033[0m %s\n' "$*"; }
-ok() { printf '\033[1;32m[setup]\033[0m %s\n' "$*"; }
-fail() { printf '\033[1;31m[setup]\033[0m %s\n' "$*" >&2; }
+# LOG_TAG permite ao run-all.sh assinar como [run] em vez de [setup].
+info() { printf '\033[1;34m[%s]\033[0m %s\n' "${LOG_TAG:-setup}" "$*"; }
+warn() { printf '\033[1;33m[%s]\033[0m %s\n' "${LOG_TAG:-setup}" "$*"; }
+ok() { printf '\033[1;32m[%s]\033[0m %s\n' "${LOG_TAG:-setup}" "$*"; }
+fail() { printf '\033[1;31m[%s]\033[0m %s\n' "${LOG_TAG:-setup}" "$*" >&2; }
 
 # --- sudo (pede senha 1x, mantém vivo em installs longos) ---------------------
 SUDO_KEEPALIVE_PID=""

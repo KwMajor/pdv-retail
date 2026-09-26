@@ -18,6 +18,14 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 # shellcheck disable=SC1091
 source "$ROOT/scripts/lib/common.sh"
 
+for arg in "$@"; do
+  case "$arg" in
+    -h|--help)
+      sed -n '2,15p' "${BASH_SOURCE[0]}" | sed 's/^# //; s/^#//'
+      exit 0
+      ;;
+  esac
+done
 parse_common_flags "$@" || { echo "uso: $0 [--yes]" >&2; exit 1; }
 
 # --- 0. sudo (1x) ------------------------------------------------------------
@@ -58,11 +66,13 @@ if [ "$WITH_SUDO" = "1" ]; then
     ok "docker OK ($(docker --version))"
   fi
 
-  if groups "$USER" | grep -qw docker; then
+  # `set -u` exige default: USER pode não existir em shells mínimos/CI.
+  TARGET_USER="${USER:-$(id -un)}"
+  if groups "$TARGET_USER" | grep -qw docker; then
     ok "usuário já está no grupo docker"
   else
-    info "adicionando $USER ao grupo docker..."
-    sudo usermod -aG docker "$USER"
+    info "adicionando $TARGET_USER ao grupo docker..."
+    sudo usermod -aG docker "$TARGET_USER"
     warn "grupo docker adicionado — faça logout/login (ou 'newgrp docker') para usar docker sem sudo."
   fi
 

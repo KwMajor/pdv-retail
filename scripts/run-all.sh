@@ -14,8 +14,10 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-API_PORT="${PORT:-3000}"
-WEB_PORT=1420
+# Helpers e ativação do Node centralizados (sem duplicar com setup-*).
+# shellcheck disable=SC1091
+source "$ROOT/scripts/lib/common.sh"
+LOG_TAG="run"
 
 MODE="all"
 for arg in "$@"; do
@@ -24,32 +26,37 @@ for arg in "$@"; do
     --web-only) MODE="web" ;;
     --tauri) MODE="tauri" ;;
     -h|--help)
-      sed -n '2,12p' "${BASH_SOURCE[0]}" | sed 's/^# //; s/^#//'
+      sed -n '2,14p' "${BASH_SOURCE[0]}" | sed 's/^# //; s/^#//'
       exit 0
       ;;
     *) echo "flag desconhecida: $arg" >&2; exit 1 ;;
   esac
 done
 
-info() { printf '\033[1;34m[run]\033[0m %s\n' "$*"; }
-ok() { printf '\033[1;32m[run]\033[0m %s\n' "$*"; }
-fail() { printf '\033[1;31m[run]\033[0m %s\n' "$*" >&2; }
-
 # --- 0. pré-requisitos ---------------------------------------------------------
 export PATH="$HOME/.cargo/bin:$PATH"
 command -v docker >/dev/null 2>&1 || { fail "docker ausente — rode scripts/setup-backend.sh"; exit 1; }
 command -v cargo >/dev/null 2>&1 || { fail "cargo ausente — rode scripts/setup-backend.sh"; exit 1; }
 command -v sqlx >/dev/null 2>&1 || { fail "sqlx ausente — rode scripts/setup-backend.sh"; exit 1; }
-export PATH="$HOME/.local/share/fnm:$HOME/.local/bin:$PATH"
-if [ -x "$HOME/.local/share/fnm/fnm" ]; then
-  # shellcheck disable=SC1090
-  eval "$($HOME/.local/share/fnm/fnm env --shell bash)" 2>/dev/null || true
-fi
+command -v curl >/dev/null 2>&1 || { fail "curl ausente — rode scripts/setup-backend.sh"; exit 1; }
+activate_node
 if [ "$MODE" != "api" ] && ! command -v node >/dev/null 2>&1; then
   fail "node ausente — rode scripts/setup-frontend.sh"; exit 1
 fi
 [ -f "$ROOT/.env" ] || { fail ".env ausente — rode scripts/setup-backend.sh"; exit 1; }
-for port in "$API_PORT" "$WEB_PORT"; do
+# .env CEDO: portas e credenciais do compose/API vêm daqui. Precedência:
+# ambiente explícito > .env > padrão (nunca o contrário).
+ENV_PORT="${PORT:-}"
+# shellcheck disable=SC1090
+set -a; source "$ROOT/.env"; set +a
+export DATABASE_URL="${DATABASE_URL:?DATABASE_URL ausente no .env}"
+API_PORT="${ENV_PORT:-${PORT:-3000}}"
+WEB_PORT=1420
+# Checa só as portas do modo ativo (evita falso "ocupada" no --web-only/--api-only).
+PORTS_TO_CHECK=()
+[ "$MODE" != "web" ] && PORTS_TO_CHECK+=("$API_PORT")
+[ "$MODE" != "api" ] && PORTS_TO_CHECK+=("$WEB_PORT")
+for port in "${PORTS_TO_CHECK[@]}"; do
   if (command -v ss >/dev/null 2>&1 && ss -ltn 2>/dev/null | grep -q ":$port ") \
     || (exec 3<>/dev/tcp/127.0.0.1/$port) 2>/dev/null; then
     exec 3>&- 2>/dev/null || true
@@ -73,10 +80,8 @@ docker exec pdv-postgres pg_isready -U "${POSTGRES_USER:-pdv}" >/dev/null \
 ok "postgres no ar"
 
 # --- 2. migrations --------------------------------------------------------------
+# (.env já carregado e exportado no preflight.)
 info "aplicando migrations..."
-# shellcheck disable=SC1090
-set -a; source "$ROOT/.env"; set +a
-export DATABASE_URL="${DATABASE_URL:?DATABASE_URL ausente no .env}"
 ( cd "$ROOT/cloud-api" && sqlx migrate run )
 ok "migrations aplicadas"
 
@@ -126,6 +131,9 @@ fi
 
 if [ "$MODE" != "api" ]; then
   if [ "$MODE" = "tauri" ]; then
+    if [ -z "${DISPLAY:-}" ] && [ -z "${WAYLAND_DISPLAY:-}" ]; then
+      warn "sem DISPLAY/WAYLAND_DISPLAY — tauri dev precisa de sessão gráfica."
+    fi
     info "abrindo janela Tauri (npx tauri dev)..."
     ( cd "$ROOT/desktop-client" && exec npx tauri dev ) &
   else
