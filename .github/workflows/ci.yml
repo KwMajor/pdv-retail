@@ -92,7 +92,7 @@ jobs:
       - uses: EmbarkStudios/cargo-deny-action@b66acf5e9fe20f8aba065be86778a8a4c846f902 # v2
         with:
           manifest-path: cloud-api/Cargo.toml
-          log-level: warning
+          log-level: warn
           command: check
       - uses: actions/dependency-review-action@2031cfc080254a8a887f58cffee85186f0e49e48 # v4
         if: github.event_name == 'pull_request'
