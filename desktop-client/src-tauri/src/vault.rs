@@ -55,12 +55,16 @@ pub struct KeyringVault {
 impl KeyringVault {
     /// Entrada de produção (`pdv-session`).
     pub fn session() -> Self {
-        Self { user: VAULT_USER.to_string() }
+        Self {
+            user: VAULT_USER.to_string(),
+        }
     }
 
     /// Entrada isolada (testes): nunca toca a sessão real do operador.
     pub fn isolated(tag: &str) -> Self {
-        Self { user: format!("{VAULT_USER}-test-{tag}") }
+        Self {
+            user: [VAULT_USER, "-test-", tag].concat(),
+        }
     }
 
     fn entry(&self) -> Result<keyring::Entry, VaultError> {
@@ -71,7 +75,9 @@ impl KeyringVault {
 
 impl TokenVault for KeyringVault {
     fn save(&self, token: &str) -> Result<(), VaultError> {
-        self.entry()?.set_password(token).map_err(|_| VaultError::Backend)
+        self.entry()?
+            .set_password(token)
+            .map_err(|_| VaultError::Backend)
     }
 
     fn load(&self) -> Result<String, VaultError> {
@@ -131,7 +137,8 @@ impl TokenVault for MemoryVault {
 /// Sonda se há cofre funcional (para pular o teste live onde não houver).
 #[cfg(test)]
 fn secret_service_available() -> bool {
-    let probe = format!("{}-probe", VAULT_USER);
+    // Nome por concatenação de fatias (regra anti-interpolação deste repo).
+    let probe = [VAULT_USER, "-probe"].concat();
     let entry = match keyring::Entry::new(VAULT_SERVICE, &probe) {
         Ok(e) => e,
         Err(_) => return false,
@@ -187,8 +194,7 @@ mod tests {
             eprintln!("SKIP: sem Secret Service neste ambiente");
             return;
         }
-        let vault =
-            KeyringVault::isolated(&format!("rt-{}", std::process::id()));
+        let vault = KeyringVault::isolated(&format!("rt-{}", std::process::id()));
         assert_contract(&vault);
         vault.clear().unwrap();
     }

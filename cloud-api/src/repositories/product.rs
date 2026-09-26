@@ -59,26 +59,14 @@ pub trait ProductRepository {
         id: Uuid,
         patch: ProductPatch,
     ) -> Result<Product, sqlx::Error>;
-    async fn find_by_id(
-        &self,
-        store_id: Uuid,
-        id: Uuid,
-    ) -> Result<Option<Product>, sqlx::Error>;
-    async fn find_by_sku(
-        &self,
-        store_id: Uuid,
-        sku: &str,
-    ) -> Result<Option<Product>, sqlx::Error>;
+    async fn find_by_id(&self, store_id: Uuid, id: Uuid) -> Result<Option<Product>, sqlx::Error>;
+    async fn find_by_sku(&self, store_id: Uuid, sku: &str) -> Result<Option<Product>, sqlx::Error>;
     async fn find_by_barcode(
         &self,
         store_id: Uuid,
         barcode: &str,
     ) -> Result<Option<Product>, sqlx::Error>;
-    async fn list_active(
-        &self,
-        store_id: Uuid,
-        limit: i64,
-    ) -> Result<Vec<Product>, sqlx::Error>;
+    async fn list_active(&self, store_id: Uuid, limit: i64) -> Result<Vec<Product>, sqlx::Error>;
     /// Busca textual em nome/sku/barcode (US06: achar produto no bip).
     /// Sempre isolada por `store_id` + só ativos.
     async fn search_active(
@@ -148,11 +136,7 @@ impl ProductRepository for PgProductRepository {
         .await
     }
 
-    async fn find_by_id(
-        &self,
-        store_id: Uuid,
-        id: Uuid,
-    ) -> Result<Option<Product>, sqlx::Error> {
+    async fn find_by_id(&self, store_id: Uuid, id: Uuid) -> Result<Option<Product>, sqlx::Error> {
         sqlx::query_as!(
             Product,
             "SELECT id, store_id, sku, barcode, name, price, cost, ncm, cest, cfop, icms_origin, icms_rate, is_active, created_at, updated_at
@@ -164,11 +148,7 @@ impl ProductRepository for PgProductRepository {
         .await
     }
 
-    async fn find_by_sku(
-        &self,
-        store_id: Uuid,
-        sku: &str,
-    ) -> Result<Option<Product>, sqlx::Error> {
+    async fn find_by_sku(&self, store_id: Uuid, sku: &str) -> Result<Option<Product>, sqlx::Error> {
         sqlx::query_as!(
             Product,
             "SELECT id, store_id, sku, barcode, name, price, cost, ncm, cest, cfop, icms_origin, icms_rate, is_active, created_at, updated_at
@@ -196,11 +176,7 @@ impl ProductRepository for PgProductRepository {
         .await
     }
 
-    async fn list_active(
-        &self,
-        store_id: Uuid,
-        limit: i64,
-    ) -> Result<Vec<Product>, sqlx::Error> {
+    async fn list_active(&self, store_id: Uuid, limit: i64) -> Result<Vec<Product>, sqlx::Error> {
         sqlx::query_as!(
             Product,
             "SELECT id, store_id, sku, barcode, name, price, cost, ncm, cest, cfop, icms_origin, icms_rate, is_active, created_at, updated_at

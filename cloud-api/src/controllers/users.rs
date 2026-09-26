@@ -122,7 +122,9 @@ pub async fn create_user_handler(
 ) -> Result<(StatusCode, Json<UserResponse>), AppError> {
     // RBAC (OWASP A01): caixa não cadastra funcionário — só gestão.
     ctx.require_manager()?;
-    let pool = pool.pool.ok_or_else(|| AppError::Internal("banco não configurado".to_string()))?;
+    let pool = pool
+        .pool
+        .ok_or_else(|| AppError::Internal("banco não configurado".to_string()))?;
     let repo = PgUserRepository::new(pool);
     let user = create_user(
         &repo,

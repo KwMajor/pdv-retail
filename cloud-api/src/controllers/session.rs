@@ -9,7 +9,7 @@ use axum::{Json, extract::State};
 use crate::errors::AppError;
 use crate::middleware::StoreHint;
 use crate::repositories::PgUserRepository;
-use crate::services::auth_service::{LoginError, LoginInput, login};
+use crate::services::session_service::{LoginError, LoginInput, login};
 
 use super::users::UserResponse;
 
@@ -22,7 +22,7 @@ pub struct LoginRequest {
 }
 
 #[derive(Debug, serde::Serialize, utoipa::ToSchema)]
-#[schema(example = json!({"token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.EXEMPLO-NAO-REAL", "token_type": "Bearer", "expires_in": 43200, "user": {"id": "11111111-1111-1111-1111-111111111111", "store_id": "22222222-2222-2222-2222-222222222222", "name": "Maria Caixa", "email": "maria@loja.exemplo", "role": "cashier", "is_active": true}}))]
+#[schema(example = json!({"token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.EXEMPLO NAO REAL.falsa", "token_type": "Bearer", "expires_in": 43200, "user": {"id": "11111111-1111-1111-1111-111111111111", "store_id": "22222222-2222-2222-2222-222222222222", "name": "Maria Caixa", "email": "maria@loja.exemplo", "role": "cashier", "is_active": true}}))]
 pub struct LoginResponse {
     /// JWT assinado (exemplo fictício — nunca um token real).
     pub token: String,
@@ -53,7 +53,10 @@ pub async fn login_handler(
         &repo,
         &state.jwt,
         hint.store_id,
-        LoginInput { email: body.email, password: body.password },
+        LoginInput {
+            email: body.email,
+            password: body.password,
+        },
     )
     .await
     .map_err(|e| match e {
@@ -63,7 +66,7 @@ pub async fn login_handler(
     Ok(Json(LoginResponse {
         token: out.token,
         token_type: "Bearer".to_string(),
-        expires_in: crate::auth::TOKEN_TTL_SECS,
+        expires_in: crate::jwt::TOKEN_TTL_SECS,
         user: UserResponse::from(out.user),
     }))
 }

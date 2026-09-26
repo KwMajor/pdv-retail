@@ -17,21 +17,10 @@ pub struct NewUser {
 
 pub trait UserRepository {
     async fn create(&self, input: NewUser) -> Result<User, sqlx::Error>;
-    async fn find_by_id(
-        &self,
-        store_id: Uuid,
-        id: Uuid,
-    ) -> Result<Option<User>, sqlx::Error>;
-    async fn find_by_email(
-        &self,
-        store_id: Uuid,
-        email: &str,
-    ) -> Result<Option<User>, sqlx::Error>;
-    async fn list_active(
-        &self,
-        store_id: Uuid,
-        limit: i64,
-    ) -> Result<Vec<User>, sqlx::Error>;
+    async fn find_by_id(&self, store_id: Uuid, id: Uuid) -> Result<Option<User>, sqlx::Error>;
+    async fn find_by_email(&self, store_id: Uuid, email: &str)
+    -> Result<Option<User>, sqlx::Error>;
+    async fn list_active(&self, store_id: Uuid, limit: i64) -> Result<Vec<User>, sqlx::Error>;
     async fn set_pin_hash(
         &self,
         store_id: Uuid,
@@ -70,11 +59,7 @@ impl UserRepository for PgUserRepository {
         .await
     }
 
-    async fn find_by_id(
-        &self,
-        store_id: Uuid,
-        id: Uuid,
-    ) -> Result<Option<User>, sqlx::Error> {
+    async fn find_by_id(&self, store_id: Uuid, id: Uuid) -> Result<Option<User>, sqlx::Error> {
         sqlx::query_as!(
             User,
             "SELECT id, store_id, name, email, password_hash, role, pin_hash, is_active, created_at, updated_at
@@ -102,11 +87,7 @@ impl UserRepository for PgUserRepository {
         .await
     }
 
-    async fn list_active(
-        &self,
-        store_id: Uuid,
-        limit: i64,
-    ) -> Result<Vec<User>, sqlx::Error> {
+    async fn list_active(&self, store_id: Uuid, limit: i64) -> Result<Vec<User>, sqlx::Error> {
         sqlx::query_as!(
             User,
             "SELECT id, store_id, name, email, password_hash, role, pin_hash, is_active, created_at, updated_at

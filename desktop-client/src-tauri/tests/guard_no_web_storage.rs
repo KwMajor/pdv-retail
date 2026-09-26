@@ -21,7 +21,10 @@ fn ts_files(dir: &Path, out: &mut Vec<PathBuf>) {
                 continue;
             }
             ts_files(&path, out);
-        } else if matches!(path.extension().and_then(|e| e.to_str()), Some("ts" | "tsx" | "js" | "jsx")) {
+        } else if matches!(
+            path.extension().and_then(|e| e.to_str()),
+            Some("ts" | "tsx" | "js" | "jsx")
+        ) {
             out.push(path);
         }
     }
@@ -32,7 +35,10 @@ fn frontend_sem_web_storage_em_texto_plano() {
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("..").join("src");
     let mut files = Vec::new();
     ts_files(&root, &mut files);
-    assert!(!files.is_empty(), "frontend `src/` não encontrado para auditoria");
+    assert!(
+        !files.is_empty(),
+        "frontend `src/` não encontrado para auditoria"
+    );
     for path in &files {
         let source = std::fs::read_to_string(path).unwrap();
         for token in FORBIDDEN {

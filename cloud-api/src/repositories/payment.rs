@@ -19,11 +19,7 @@ pub struct NewPayment {
 
 pub trait PaymentRepository {
     async fn create(&self, input: NewPayment) -> Result<Payment, sqlx::Error>;
-    async fn find_by_id(
-        &self,
-        store_id: Uuid,
-        id: Uuid,
-    ) -> Result<Option<Payment>, sqlx::Error>;
+    async fn find_by_id(&self, store_id: Uuid, id: Uuid) -> Result<Option<Payment>, sqlx::Error>;
     async fn list_by_sale(
         &self,
         store_id: Uuid,
@@ -59,11 +55,7 @@ impl PaymentRepository for PgPaymentRepository {
         .await
     }
 
-    async fn find_by_id(
-        &self,
-        store_id: Uuid,
-        id: Uuid,
-    ) -> Result<Option<Payment>, sqlx::Error> {
+    async fn find_by_id(&self, store_id: Uuid, id: Uuid) -> Result<Option<Payment>, sqlx::Error> {
         sqlx::query_as!(
             Payment,
             "SELECT id, store_id, sale_id, method, amount, tendered_amount, created_at

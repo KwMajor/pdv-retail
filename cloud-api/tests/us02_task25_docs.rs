@@ -8,11 +8,7 @@
 
 use axum::body::{Body, to_bytes};
 use axum::http::{Request, StatusCode};
-use pdv_cloud_api::{
-    AppState, app_router,
-    auth::JwtKeys,
-    docs::routes,
-};
+use pdv_cloud_api::{AppState, app_router, jwt::JwtKeys, openapi::routes};
 use tower::ServiceExt;
 
 /// Segredo só dos testes (nunca em prod).
@@ -38,7 +34,10 @@ async fn get(app: axum::Router, uri: &str) -> (StatusCode, Vec<u8>, String) {
         .and_then(|v| v.to_str().ok())
         .unwrap_or("")
         .to_string();
-    let bytes = to_bytes(res.into_body(), 256 * 1024).await.unwrap().to_vec();
+    let bytes = to_bytes(res.into_body(), 256 * 1024)
+        .await
+        .unwrap()
+        .to_vec();
     (status, bytes, content_type)
 }
 
@@ -88,19 +87,38 @@ async fn conteudo_users_ping_login_documenta_auth_e_erros() {
     );
     // Schemas públicos existem; o interno com hashes, jamais.
     let schemas = spec["components"]["schemas"].as_object().unwrap();
-    for name in ["UserResponse", "CreateUserRequest", "LoginResponse", "ErrorBody", "PingResponse"] {
+    for name in [
+        "UserResponse",
+        "CreateUserRequest",
+        "LoginResponse",
+        "ErrorBody",
+        "PingResponse",
+    ] {
         assert!(schemas.contains_key(name), "schema {name} ausente");
     }
-    assert!(!schemas.contains_key("User"), "struct interna User vazou no spec!");
+    assert!(
+        !schemas.contains_key("User"),
+        "struct interna User vazou no spec!"
+    );
     // Login documenta o TTL e o envelope de erro.
-    assert!(spec["paths"][routes::LOGIN]["post"]["responses"].get("200").is_some());
+    assert!(
+        spec["paths"][routes::LOGIN]["post"]["responses"]
+            .get("200")
+            .is_some()
+    );
 }
 
 #[tokio::test]
 async fn spec_sem_hashes_segredos_ou_pii() {
     let spec = spec_json().await;
     let raw = spec.to_string();
-    for proibido in ["password_hash", "pin_hash", "JWT_SECRET", "$argon2", "segredo-123"] {
+    for proibido in [
+        "password_hash",
+        "pin_hash",
+        "JWT_SECRET",
+        "$argon2",
+        "segredo-123",
+    ] {
         assert!(
             !raw.contains(proibido),
             "spec vaza dado sensível: {proibido}"

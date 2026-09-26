@@ -16,7 +16,7 @@ use axum::body::{Body, to_bytes};
 use axum::http::{Request, StatusCode};
 use pdv_cloud_api::{
     AppState, app_router,
-    auth::JwtKeys,
+    jwt::JwtKeys,
     models::UserRole,
     repositories::PgUserRepository,
     services::{CreateUserInput, create_user},
@@ -134,7 +134,9 @@ async fn login_token(p: &sqlx::PgPool, store: &str, email: &str, password: &str)
                 .uri("/api/v1/auth/login")
                 .header("X-Store-ID", store)
                 .header("Content-Type", "application/json")
-                .body(Body::from(json!({"email": email, "password": password}).to_string()))
+                .body(Body::from(
+                    json!({"email": email, "password": password}).to_string(),
+                ))
                 .unwrap(),
         )
         .await
@@ -220,8 +222,16 @@ async fn banco_guarda_argon2_irreversivel_e_nao_plaintext() {
     assert!(hash.starts_with("$argon2id$"), "hash não é Argon2: {hash}");
     // Salt embutido: verifica o plaintext mas não o revela.
     let parsed = PasswordHash::new(&hash).unwrap();
-    assert!(Argon2::default().verify_password(plain.as_bytes(), &parsed).is_ok());
-    assert!(Argon2::default().verify_password(b"outra", &parsed).is_err());
+    assert!(
+        Argon2::default()
+            .verify_password(plain.as_bytes(), &parsed)
+            .is_ok()
+    );
+    assert!(
+        Argon2::default()
+            .verify_password(b"outra", &parsed)
+            .is_err()
+    );
 }
 
 // --- Security Case: isolamento de tenant ---------------------------------------
@@ -356,14 +366,37 @@ async fn email_duplicado_na_loja_409_mas_reuso_entre_lojas() {
     let ta = manager_token(&p, &a).await;
     let tb = manager_token(&p, &b).await;
     let email = uniq("dup21@loja");
-    let payload = || json!({"name": "F", "email": email, "password": "segredo-123", "role": "cashier"});
-    let (s1, _) = corpo(app_with_db(p.clone()).oneshot(post_users(&ta, payload())).await.unwrap()).await;
+    let payload =
+        || json!({"name": "F", "email": email, "password": "segredo-123", "role": "cashier"});
+    let (s1, _) = corpo(
+        app_with_db(p.clone())
+            .oneshot(post_users(&ta, payload()))
+            .await
+            .unwrap(),
+    )
+    .await;
     assert_eq!(s1, StatusCode::CREATED);
-    let (s2, j2) = corpo(app_with_db(p.clone()).oneshot(post_users(&ta, payload())).await.unwrap()).await;
+    let (s2, j2) = corpo(
+        app_with_db(p.clone())
+            .oneshot(post_users(&ta, payload()))
+            .await
+            .unwrap(),
+    )
+    .await;
     assert_eq!(s2, StatusCode::CONFLICT);
     assert_eq!(j2["code"], "CONFLICT");
-    let (s3, _) = corpo(app_with_db(p.clone()).oneshot(post_users(&tb, payload())).await.unwrap()).await;
-    assert_eq!(s3, StatusCode::CREATED, "mesmo email em outra loja deve passar");
+    let (s3, _) = corpo(
+        app_with_db(p.clone())
+            .oneshot(post_users(&tb, payload()))
+            .await
+            .unwrap(),
+    )
+    .await;
+    assert_eq!(
+        s3,
+        StatusCode::CREATED,
+        "mesmo email em outra loja deve passar"
+    );
 }
 
 #[tokio::test]
@@ -373,14 +406,32 @@ async fn validacoes_basicas_retornam_400() {
     let token = manager_token(&p, &store).await;
     let longo = "x".repeat(300);
     for (caso, payload) in [
-        ("senha curta", json!({"name": "F", "email": uniq("v21@loja"), "password": "123", "role": "cashier"})),
-        ("email sem @", json!({"name": "F", "email": "sem-arroba", "password": "segredo-123", "role": "cashier"})),
-        ("nome vazio", json!({"name": "  ", "email": uniq("v21@loja"), "password": "segredo-123", "role": "cashier"})),
-        ("nome >255", json!({"name": longo, "email": uniq("v21@loja"), "password": "segredo-123", "role": "cashier"})),
-        ("email >255", json!({"name": "F", "email": format!("{}@loja.exemplo", longo), "password": "segredo-123", "role": "cashier"})),
+        (
+            "senha curta",
+            json!({"name": "F", "email": uniq("v21@loja"), "password": "123", "role": "cashier"}),
+        ),
+        (
+            "email sem @",
+            json!({"name": "F", "email": "sem-arroba", "password": "segredo-123", "role": "cashier"}),
+        ),
+        (
+            "nome vazio",
+            json!({"name": "  ", "email": uniq("v21@loja"), "password": "segredo-123", "role": "cashier"}),
+        ),
+        (
+            "nome >255",
+            json!({"name": longo, "email": uniq("v21@loja"), "password": "segredo-123", "role": "cashier"}),
+        ),
+        (
+            "email >255",
+            json!({"name": "F", "email": format!("{}@loja.exemplo", longo), "password": "segredo-123", "role": "cashier"}),
+        ),
     ] {
         let (status, json) = corpo(
-            app_with_db(p.clone()).oneshot(post_users(&token, payload)).await.unwrap(),
+            app_with_db(p.clone())
+                .oneshot(post_users(&token, payload))
+                .await
+                .unwrap(),
         )
         .await;
         assert_eq!(status, StatusCode::BAD_REQUEST, "{caso}");

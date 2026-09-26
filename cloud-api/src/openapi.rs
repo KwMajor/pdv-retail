@@ -6,10 +6,10 @@
 //! - `routes::DOCUMENTED` é a fonte única cruzada pelo teste anti-drift:
 //!   o `app_router` REGISTRA por estas consts e o spec PRECISA contê-las.
 
-use utoipa::{Modify, OpenApi};
 use utoipa::openapi::security::{HttpAuthScheme, HttpBuilder, SecurityScheme};
+use utoipa::{Modify, OpenApi};
 
-use crate::controllers::{auth, health, ping, products, users};
+use crate::controllers::{health, ping, products, session, users};
 use crate::errors::ErrorBody;
 use crate::models::UserRole;
 
@@ -27,7 +27,16 @@ pub mod routes {
     pub const DOCS_UI: &str = "/docs";
 
     /// Toda rota de negócio precisa estar no spec (anti-drift).
-    pub const DOCUMENTED: &[&str] = &[HEALTH, READY, PING, USERS, ME, LOGIN, PRODUCTS, PRODUCT_BY_ID];
+    pub const DOCUMENTED: &[&str] = &[
+        HEALTH,
+        READY,
+        PING,
+        USERS,
+        ME,
+        LOGIN,
+        PRODUCTS,
+        PRODUCT_BY_ID,
+    ];
 }
 
 /// `Authorization: Bearer <JWT>` como esquema nomeado `bearer`.
@@ -58,7 +67,7 @@ impl Modify for SecurityAddon {
         ping::ping,
         users::create_user_handler,
         users::me_handler,
-        auth::login_handler,
+        session::login_handler,
         products::create_product_handler,
         products::list_products_handler,
         products::get_product_handler,
@@ -72,8 +81,8 @@ impl Modify for SecurityAddon {
             ping::PingResponse,
             users::CreateUserRequest,
             users::UserResponse,
-            auth::LoginRequest,
-            auth::LoginResponse,
+            session::LoginRequest,
+            session::LoginResponse,
             products::CreateProductRequest,
             products::UpdateProductRequest,
             products::ListProductsQuery,

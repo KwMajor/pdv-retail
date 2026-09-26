@@ -7,7 +7,7 @@
 use std::sync::OnceLock;
 use uuid::Uuid;
 
-use crate::auth::JwtKeys;
+use crate::jwt::JwtKeys;
 use crate::models::User;
 use crate::repositories::{PgUserRepository, UserRepository};
 use argon2::password_hash::{PasswordHash, PasswordVerifier};
@@ -70,7 +70,11 @@ pub async fn login(
         .issue(user.id, user.store_id, role)
         .map_err(|_| LoginError::Invalid)?;
 
-    Ok(LoginOutput { token, expires_at, user })
+    Ok(LoginOutput {
+        token,
+        expires_at,
+        user,
+    })
 }
 
 fn check_hash(hash: &str, plain: &str) -> bool {
@@ -87,9 +91,8 @@ fn check_hash(hash: &str, plain: &str) -> bool {
 /// Hash dummy estável por processo: equaliza o tempo do caminho negativo.
 fn verify_against_dummy(plain: &str) {
     static DUMMY: OnceLock<String> = OnceLock::new();
-    let hash = DUMMY.get_or_init(|| {
-        hash_password("dummy-credential-para-equalizar-tempo").unwrap_or_default()
-    });
+    let hash = DUMMY
+        .get_or_init(|| hash_password("dummy-credential-para-equalizar-tempo").unwrap_or_default());
     if !hash.is_empty() {
         let _ = check_hash(hash, plain);
     }

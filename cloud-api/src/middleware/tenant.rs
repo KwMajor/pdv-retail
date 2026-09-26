@@ -62,41 +62,21 @@ impl FromRequestParts<AppState> for TenantContext {
             return Err(AppError::Unauthorized);
         }
         // Assinatura e exp validados aqui: adulteração/expiração caem neste erro.
-        let claims = state.jwt.validate(token).map_err(|_| AppError::Unauthorized)?;
+        let claims = state
+            .jwt
+            .validate(token)
+            .map_err(|_| AppError::Unauthorized)?;
         let role = match claims.role.as_str() {
             "admin" => UserRole::Admin,
             "manager" => UserRole::Manager,
             "cashier" => UserRole::Cashier,
             _ => return Err(AppError::Unauthorized),
         };
-        Ok(Self { store_id: claims.store_id, user_id: claims.sub, role })
-    }
-}
-
-/// Dica de loja para o login (NÃO autenticada — só localiza o tenant).
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct StoreHint {
-    pub store_id: Uuid,
-}
-
-#[async_trait::async_trait]
-impl FromRequestParts<AppState> for StoreHint {
-    type Rejection = AppError;
-
-    async fn from_request_parts(
-        parts: &mut Parts,
-        _state: &AppState,
-    ) -> Result<Self, Self::Rejection> {
-        let raw = parts.headers.get(STORE_ID_HEADER).ok_or_else(|| {
-            AppError::BadRequest("header X-Store-ID ausente".to_string())
-        })?;
-        let text = raw.to_str().map_err(|_| {
-            AppError::BadRequest("header X-Store-ID inválido: UUID esperado".to_string())
-        })?;
-        let store_id = text.parse::<Uuid>().map_err(|_| {
-            AppError::BadRequest("header X-Store-ID inválido: UUID esperado".to_string())
-        })?;
-        Ok(Self { store_id })
+        Ok(Self {
+            store_id: claims.store_id,
+            user_id: claims.sub,
+            role,
+        })
     }
 }
 
@@ -107,7 +87,7 @@ mod tests {
     use axum::http::{Request, StatusCode};
     use axum::response::IntoResponse;
 
-    use crate::auth::JwtKeys;
+    use crate::jwt::JwtKeys;
 
     /// Segredo só dos testes (nunca em prod).
     fn keys() -> JwtKeys {
@@ -115,7 +95,11 @@ mod tests {
     }
 
     fn state() -> AppState {
-        AppState { pool: None, jwt: keys(), expose_docs: false }
+        AppState {
+            pool: None,
+            jwt: keys(),
+            expose_docs: false,
+        }
     }
 
     fn parts_with(headers: &[(&str, &str)]) -> Parts {
@@ -144,13 +128,21 @@ mod tests {
         let (token, _) = keys.issue(user, store, UserRole::Manager).unwrap();
         let auth = format!("Bearer {token}");
         let ctx = extract(&[("authorization", &auth)]).await.unwrap();
-        assert_eq!((ctx.store_id, ctx.user_id, ctx.role), (store, user, UserRole::Manager));
+        assert_eq!(
+            (ctx.store_id, ctx.user_id, ctx.role),
+            (store, user, UserRole::Manager)
+        );
     }
 
     #[tokio::test]
     async fn sem_bearer_rejeita_401() {
-        assert_eq!(status_of(extract(&[]).await.unwrap_err()), StatusCode::UNAUTHORIZED);
-        let bad = extract(&[("authorization", "Token abc")]).await.unwrap_err();
+        assert_eq!(
+            status_of(extract(&[]).await.unwrap_err()),
+            StatusCode::UNAUTHORIZED
+        );
+        let bad = extract(&[("authorization", "Token abc")])
+            .await
+            .unwrap_err();
         assert_eq!(status_of(bad), StatusCode::UNAUTHORIZED);
         let vazio = extract(&[("authorization", "Bearer ")]).await.unwrap_err();
         assert_eq!(status_of(vazio), StatusCode::UNAUTHORIZED);
@@ -178,7 +170,12 @@ mod tests {
         use chrono::Utc;
         let keys = keys();
         let (token, _) = keys
-            .issue_at(Uuid::new_v4(), Uuid::new_v4(), UserRole::Admin, Utc::now().timestamp() - 3600)
+            .issue_at(
+                Uuid::new_v4(),
+                Uuid::new_v4(),
+                UserRole::Admin,
+                Utc::now().timestamp() - 3600,
+            )
             .unwrap();
         let auth = format!("Bearer {token}");
         assert_eq!(
@@ -192,7 +189,7 @@ mod tests {
         // Assinatura válida, mas `role` fora da lista: o extractor barra.
         use jsonwebtoken::{Algorithm, EncodingKey, Header, encode};
         let now = chrono::Utc::now().timestamp();
-        let claims = crate::auth::Claims {
+        let claims = crate::jwt::Claims {
             sub: Uuid::new_v4(),
             store_id: Uuid::new_v4(),
             role: "dono".to_string(),
@@ -213,23 +210,20 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn store_hint_so_para_login() {
-        let id = Uuid::new_v4().to_string();
-        let mut parts = parts_with(&[(STORE_ID_HEADER, &id)]);
-        let hint = StoreHint::from_request_parts(&mut parts, &state()).await.unwrap();
-        assert_eq!(hint.store_id.to_string(), id);
-        let mut sem = parts_with(&[]);
-        assert!(StoreHint::from_request_parts(&mut sem, &state()).await.is_err());
-    }
-
-    #[tokio::test]
     async fn caixa_nao_passa_no_require_manager() {
-        let ctx = TenantContext { store_id: Uuid::new_v4(), user_id: Uuid::new_v4(), role: UserRole::Cashier };
+        let ctx = TenantContext {
+            store_id: Uuid::new_v4(),
+            user_id: Uuid::new_v4(),
+            role: UserRole::Cashier,
+        };
         assert_eq!(
             status_of(ctx.require_manager().unwrap_err()),
             StatusCode::FORBIDDEN
         );
-        let gerente = TenantContext { role: UserRole::Manager, ..ctx };
+        let gerente = TenantContext {
+            role: UserRole::Manager,
+            ..ctx
+        };
         assert!(gerente.require_manager().is_ok());
     }
 }

@@ -11,7 +11,7 @@ use axum::body::{Body, to_bytes};
 use axum::http::{Request, StatusCode};
 use pdv_cloud_api::{
     AppState, app_router,
-    auth::{JwtKeys, TOKEN_TTL_SECS},
+    jwt::{JwtKeys, TOKEN_TTL_SECS},
     models::UserRole,
     repositories::PgUserRepository,
     services::{CreateUserInput, create_user},
@@ -127,7 +127,9 @@ fn post_login(store: Option<&str>, email: &str, password: &str) -> Request<Body>
         builder = builder.header("X-Store-ID", s);
     }
     builder
-        .body(Body::from(json!({"email": email, "password": password}).to_string()))
+        .body(Body::from(
+            json!({"email": email, "password": password}).to_string(),
+        ))
         .unwrap()
 }
 
@@ -159,7 +161,10 @@ async fn login_emite_jwt_com_claims_obrigatorios_e_ttl_12h() {
     let store = mk_store(&p, &uniq("lh")).await;
     let email = mk_user(&p, &store, UserRole::Cashier, "segredo-123").await;
     let (status, json) = corpo(
-        app_with_db(p.clone()).oneshot(post_login(Some(&store), &email, "segredo-123")).await.unwrap(),
+        app_with_db(p.clone())
+            .oneshot(post_login(Some(&store), &email, "segredo-123"))
+            .await
+            .unwrap(),
     )
     .await;
     assert_eq!(status, StatusCode::OK);
@@ -170,7 +175,10 @@ async fn login_emite_jwt_com_claims_obrigatorios_e_ttl_12h() {
 
     // Claims conferem na decodificação com o segredo.
     let token = json["token"].as_str().unwrap();
-    let claims = JwtKeys::from_secret(TEST_SECRET).unwrap().validate(token).unwrap();
+    let claims = JwtKeys::from_secret(TEST_SECRET)
+        .unwrap()
+        .validate(token)
+        .unwrap();
     assert_eq!(claims.store_id.to_string(), store);
     assert_eq!(claims.role, "cashier");
     assert_eq!(claims.exp - claims.iat, TOKEN_TTL_SECS, "teto do DoD: 12h");
@@ -200,7 +208,10 @@ async fn credencial_errada_inativo_e_inexistente_retornam_mesmo_401() {
         (off.clone(), "segredo-123"),             // inativo
     ] {
         let (status, json) = corpo(
-            app_with_db(p.clone()).oneshot(post_login(Some(&store), &email, pass)).await.unwrap(),
+            app_with_db(p.clone())
+                .oneshot(post_login(Some(&store), &email, pass))
+                .await
+                .unwrap(),
         )
         .await;
         assert_eq!(status, StatusCode::UNAUTHORIZED);
@@ -220,11 +231,17 @@ async fn senha_gigante_cai_no_401_generico_sem_argon2() {
     let email = mk_user(&p, &store, UserRole::Cashier, "segredo-123").await;
     let gigante = "y".repeat(5000);
     let (s1, j1) = corpo(
-        app_with_db(p.clone()).oneshot(post_login(Some(&store), &email, &gigante)).await.unwrap(),
+        app_with_db(p.clone())
+            .oneshot(post_login(Some(&store), &email, &gigante))
+            .await
+            .unwrap(),
     )
     .await;
     let (s2, j2) = corpo(
-        app_with_db(p.clone()).oneshot(post_login(Some(&store), &email, "errada")).await.unwrap(),
+        app_with_db(p.clone())
+            .oneshot(post_login(Some(&store), &email, "errada"))
+            .await
+            .unwrap(),
     )
     .await;
     assert_eq!(s1, StatusCode::UNAUTHORIZED);
@@ -236,7 +253,10 @@ async fn senha_gigante_cai_no_401_generico_sem_argon2() {
 async fn login_sem_dica_de_loja_retorna_400() {
     let p = pool().await;
     let (status, json) = corpo(
-        app_with_db(p).oneshot(post_login(None, "x@y", "segredo-123")).await.unwrap(),
+        app_with_db(p)
+            .oneshot(post_login(None, "x@y", "segredo-123"))
+            .await
+            .unwrap(),
     )
     .await;
     assert_eq!(status, StatusCode::BAD_REQUEST);
@@ -251,7 +271,10 @@ async fn token_expirado_barrado_com_401() {
     let store = mk_store(&p, &uniq("lx")).await;
     let email = mk_user(&p, &store, UserRole::Admin, "segredo-123").await;
     let (status, json) = corpo(
-        app_with_db(p.clone()).oneshot(post_login(Some(&store), &email, "segredo-123")).await.unwrap(),
+        app_with_db(p.clone())
+            .oneshot(post_login(Some(&store), &email, "segredo-123"))
+            .await
+            .unwrap(),
     )
     .await;
     assert_eq!(status, StatusCode::OK);
@@ -262,7 +285,9 @@ async fn token_expirado_barrado_com_401() {
     let keys = JwtKeys::from_secret(TEST_SECRET).unwrap();
     let claims = keys.validate(token).unwrap();
     let past = chrono::Utc::now().timestamp() - 3600;
-    let (old, _) = keys.issue_at(claims.sub, claims.store_id, UserRole::Admin, past).unwrap();
+    let (old, _) = keys
+        .issue_at(claims.sub, claims.store_id, UserRole::Admin, past)
+        .unwrap();
     assert_eq!(ping(&old, &p).await, StatusCode::UNAUTHORIZED);
 }
 
@@ -273,11 +298,17 @@ async fn token_adulterado_cashier_para_manager_barrado_com_401() {
     let caixa = mk_user(&p, &store, UserRole::Cashier, "segredo-123").await;
     let gerente = mk_user(&p, &store, UserRole::Manager, "segredo-123").await;
     let (_, j_caixa) = corpo(
-        app_with_db(p.clone()).oneshot(post_login(Some(&store), &caixa, "segredo-123")).await.unwrap(),
+        app_with_db(p.clone())
+            .oneshot(post_login(Some(&store), &caixa, "segredo-123"))
+            .await
+            .unwrap(),
     )
     .await;
     let (_, j_ger) = corpo(
-        app_with_db(p.clone()).oneshot(post_login(Some(&store), &gerente, "segredo-123")).await.unwrap(),
+        app_with_db(p.clone())
+            .oneshot(post_login(Some(&store), &gerente, "segredo-123"))
+            .await
+            .unwrap(),
     )
     .await;
     let t_caixa = j_caixa["token"].as_str().unwrap();
@@ -299,7 +330,10 @@ async fn me_devolve_identidade_do_token_para_o_desktop() {
     let store = mk_store(&p, &uniq("me")).await;
     let email = mk_user(&p, &store, UserRole::Cashier, "segredo-123").await;
     let (_, login) = corpo(
-        app_with_db(p.clone()).oneshot(post_login(Some(&store), &email, "segredo-123")).await.unwrap(),
+        app_with_db(p.clone())
+            .oneshot(post_login(Some(&store), &email, "segredo-123"))
+            .await
+            .unwrap(),
     )
     .await;
     let token = login["token"].as_str().unwrap();

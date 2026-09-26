@@ -1,0 +1,122 @@
+# Regras Rust sob medida (US de fundação SaaS). Bloqueantes no CI.
+# Convenções do repo que elas protegem:
+# - OWASP A03: só prepared statements ($1, $2...) em repositories;
+# - sem unwrap/panic em produção (AppError / Result<T, String>);
+# - sem println!/dbg! (tracing é o log oficial).
+rules:
+  - id: repo-sem-format
+    languages: [rust]
+    severity: ERROR
+    message: >-
+      repositories/ proíbe montagem de SQL por concatenação (OWASP A03).
+      Use query!/query_as! com binds ($1, $2...). Nem em comentário:
+      o guard de teste também varre literais.
+    paths:
+      include:
+        - cloud-api/src/repositories/*.rs
+        - desktop-client/src-tauri/src/vault.rs
+    patterns:
+      - pattern-either:
+          - pattern: format!(...)
+          - pattern: concat!(...)
+          - pattern: $S.push_str(...)
+      - pattern-not-inside: |
+          #[cfg(test)]
+          mod tests {
+            ...
+          }
+    metadata:
+      owasp: "A03:2021 - Injection"
+
+  - id: prod-sem-unwrap-panic
+    languages: [rust]
+    severity: ERROR
+    message: >-
+      unwrap()/expect()/panic!/todo! proibidos em código de produção.
+      Retorne Result (AppError no Axum, Result<T, String> no Tauri).
+      Testes (mod tests) estão liberados; main.rs (fail-fast de boot com
+      mensagem) é exceção documentada.
+    paths:
+      include:
+        - cloud-api/src/**/*.rs
+        - desktop-client/src-tauri/src/*.rs
+      exclude:
+        - cloud-api/src/main.rs
+        - desktop-client/src-tauri/src/main.rs
+    patterns:
+      - pattern-either:
+          - pattern: $X.unwrap()
+          - pattern: $X.expect(...)
+          - pattern: panic!(...)
+          - pattern: todo!(...)
+          - pattern: unimplemented!(...)
+      - pattern-not-inside: |
+          #[cfg(test)]
+          mod tests {
+            ...
+          }
+    metadata:
+      owasp: "A04:2021 - Insecure Design"
+
+  - id: money-sem-float
+    languages: [rust]
+    severity: ERROR
+    message: >-
+      Dinheiro/alíquota como f32/f64 perde centavos (binário ≠ decimal).
+      Use rust_decimal::Decimal em models e services.
+    paths:
+      include:
+        - cloud-api/src/models/**/*.rs
+        - cloud-api/src/services/**/*.rs
+    # Regex de propósito: casa o tipo em qualquer posição (campo, arg,
+    # retorno). Escopo curto (models/services) evita falso positivo.
+    patterns:
+      - pattern-regex: ':\s*f(32|64)\b'
+      - pattern-not-inside: |
+          #[cfg(test)]
+          mod tests {
+            ...
+          }
+    metadata:
+      owasp: "A04:2021 - Insecure Design"
+
+  - id: money-sem-from-float
+    languages: [rust]
+    severity: ERROR
+    message: >-
+      Decimal::from_f64/from_f32 arredonda binário-para-decimal.
+      Construa via parse/Decimal::new ou receba Decimal pronto.
+    paths:
+      include:
+        - cloud-api/src/**/*.rs
+    patterns:
+      - pattern-either:
+          - pattern: Decimal::from_f64(...)
+          - pattern: Decimal::from_f32(...)
+          - pattern: rust_decimal::Decimal::from_f64(...)
+          - pattern: rust_decimal::Decimal::from_f32(...)
+      - pattern-not-inside: |
+          #[cfg(test)]
+          mod tests {
+            ...
+          }
+
+  - id: prod-sem-println-dbg
+    languages: [rust]
+    severity: ERROR
+    message: >-
+      println!/dbg! proibidos (vazam PII em stdout e poluem log).
+      Use tracing::{info, warn, error} (sem interpolar segredos/PII).
+    paths:
+      include:
+        - cloud-api/src/**/*.rs
+        - desktop-client/src-tauri/src/*.rs
+    patterns:
+      - pattern-either:
+          - pattern: println!(...)
+          - pattern: dbg!(...)
+      - pattern-not-inside: |
+          #[cfg(test)]
+          mod tests {
+            ...
+          }

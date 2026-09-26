@@ -3,8 +3,8 @@
 //! Services nunca montam SQL: delegam aos repositórios, que já exigem
 //! `store_id` e usam prepared statements.
 
-pub mod auth_service;
 pub mod product_service;
+pub mod session_service;
 pub mod user_service;
 
 pub use user_service::{CreateUserError, CreateUserInput, create_user};

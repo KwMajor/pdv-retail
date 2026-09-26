@@ -20,11 +20,15 @@ impl Config {
             .ok()
             .and_then(|p| p.parse().ok())
             .unwrap_or(3000);
-        let jwt_secret =
-            std::env::var("JWT_SECRET").unwrap_or_else(|_| DEV_JWT_SECRET.to_string());
+        let jwt_secret = std::env::var("JWT_SECRET").unwrap_or_else(|_| DEV_JWT_SECRET.to_string());
         // Fail-closed: sem APP_ENV explícito, comporta-se como produção (docs off).
         let app_env = std::env::var("APP_ENV").unwrap_or_else(|_| "production".to_string());
-        Self { database_url, port, jwt_secret, app_env }
+        Self {
+            database_url,
+            port,
+            jwt_secret,
+            app_env,
+        }
     }
 }
 
@@ -42,6 +46,9 @@ mod tests {
 
         // Rust 2024: manipular env é unsafe (race entre threads) — por isso
         // todos os casos vivem nesta única função, executada em sequência.
+        // Exceção auditada ao gate unsafe-usage: este é o ÚNICO teste que
+        // toca env, sem threads concorrentes lendo estas vars. (x7 abaixo)
+        // nosemgrep
         unsafe {
             // 1. Defaults (nada no ambiente).
             std::env::remove_var("DATABASE_URL");
@@ -55,6 +62,7 @@ mod tests {
         assert_eq!(cfg.app_env, "production");
 
         // 2. Valores customizados válidos.
+        // nosemgrep
         unsafe {
             std::env::set_var("DATABASE_URL", "postgres://u:p@db:5432/x");
             std::env::set_var("PORT", "8080");
@@ -64,6 +72,7 @@ mod tests {
         assert_eq!(cfg.port, 8080);
 
         // 3. PORT inválida (texto) → fallback 3000, sem panic.
+        // nosemgrep
         unsafe {
             std::env::set_var("PORT", "oitenta");
         }
@@ -71,6 +80,7 @@ mod tests {
         assert_eq!(cfg.port, 3000);
 
         // 4. PORT vazia → fallback 3000.
+        // nosemgrep
         unsafe {
             std::env::set_var("PORT", "");
         }
@@ -78,6 +88,7 @@ mod tests {
         assert_eq!(cfg.port, 3000);
 
         // 5. PORT fora da faixa u16 → fallback 3000.
+        // nosemgrep
         unsafe {
             std::env::set_var("PORT", "99999");
         }
@@ -85,6 +96,7 @@ mod tests {
         assert_eq!(cfg.port, 3000);
 
         // 6. APP_ENV respeitado (docs ligam fora de produção).
+        // nosemgrep
         unsafe {
             std::env::set_var("APP_ENV", "development");
         }
@@ -92,6 +104,7 @@ mod tests {
         assert_eq!(cfg.app_env, "development");
 
         // Restaura o ambiente como estava.
+        // nosemgrep
         unsafe {
             match saved_db {
                 Some(v) => std::env::set_var("DATABASE_URL", v),

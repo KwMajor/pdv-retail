@@ -9,11 +9,7 @@
 
 use axum::body::{Body, to_bytes};
 use axum::http::{Request, StatusCode};
-use pdv_cloud_api::{
-    AppState, app_router,
-    auth::JwtKeys,
-    models::UserRole,
-};
+use pdv_cloud_api::{AppState, app_router, jwt::JwtKeys, models::UserRole};
 use tower::ServiceExt;
 use uuid::Uuid;
 
@@ -23,7 +19,11 @@ fn keys() -> JwtKeys {
 }
 
 fn app() -> axum::Router {
-    app_router(AppState { pool: None, jwt: keys(), expose_docs: false })
+    app_router(AppState {
+        pool: None,
+        jwt: keys(),
+        expose_docs: false,
+    })
 }
 
 fn bearer(token: &str) -> String {
@@ -35,7 +35,10 @@ async fn ping(auth: Option<String>) -> (StatusCode, serde_json::Value) {
     if let Some(value) = auth {
         builder = builder.header("authorization", value);
     }
-    let res = app().oneshot(builder.body(Body::empty()).unwrap()).await.unwrap();
+    let res = app()
+        .oneshot(builder.body(Body::empty()).unwrap())
+        .await
+        .unwrap();
     let status = res.status();
     let bytes = to_bytes(res.into_body(), 1024).await.unwrap();
     (status, serde_json::from_slice(&bytes).unwrap())
@@ -59,7 +62,12 @@ async fn ping_com_jwt_valido_retorna_200_e_confirma_store() {
 
 #[tokio::test]
 async fn ping_sem_credencial_barrado_com_401() {
-    for auth in [None, Some("Token abc".into()), Some("Bearer ".into()), Some("lixo".into())] {
+    for auth in [
+        None,
+        Some("Token abc".into()),
+        Some("Bearer ".into()),
+        Some("lixo".into()),
+    ] {
         let (status, json) = ping(auth).await;
         assert_eq!(status, StatusCode::UNAUTHORIZED);
         assert_eq!(json["code"], "UNAUTHORIZED");
@@ -93,7 +101,7 @@ async fn ping_com_token_adulterado_rejeita_401() {
 async fn ping_com_papel_desconhecido_rejeita_401() {
     // Assinatura válida, mas `role` fora da lista: o extractor barra.
     use jsonwebtoken::{Algorithm, EncodingKey, Header, encode};
-    use pdv_cloud_api::auth::Claims;
+    use pdv_cloud_api::jwt::Claims;
     let now = chrono::Utc::now().timestamp();
     let token = encode(
         &Header::new(Algorithm::HS256),

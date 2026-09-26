@@ -102,7 +102,9 @@ mod tests {
     #[test]
     fn roundtrip_preserva_claims() {
         let keys = keys();
-        let (token, exp) = keys.issue(Uuid::new_v4(), Uuid::new_v4(), UserRole::Cashier).unwrap();
+        let (token, exp) = keys
+            .issue(Uuid::new_v4(), Uuid::new_v4(), UserRole::Cashier)
+            .unwrap();
         let claims = keys.validate(&token).unwrap();
         assert_eq!(claims.role, "cashier");
         assert_eq!(claims.exp, exp);
@@ -112,7 +114,9 @@ mod tests {
     fn segredo_trocado_invalida_assinatura() {
         let a = keys();
         let b = JwtKeys::from_secret("outro-segredo-valido-com-32-chars-xy").unwrap();
-        let (token, _) = a.issue(Uuid::new_v4(), Uuid::new_v4(), UserRole::Manager).unwrap();
+        let (token, _) = a
+            .issue(Uuid::new_v4(), Uuid::new_v4(), UserRole::Manager)
+            .unwrap();
         assert!(b.validate(&token).is_err());
     }
 

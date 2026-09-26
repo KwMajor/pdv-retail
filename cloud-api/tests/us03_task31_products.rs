@@ -10,7 +10,7 @@ use axum::body::{Body, to_bytes};
 use axum::http::{Request, StatusCode};
 use pdv_cloud_api::{
     AppState, app_router,
-    auth::JwtKeys,
+    jwt::JwtKeys,
     models::UserRole,
     repositories::PgUserRepository,
     services::{CreateUserInput, create_user},
@@ -107,7 +107,9 @@ async fn login_token(p: &sqlx::PgPool, store: &str, email: &str, password: &str)
                 .uri("/api/v1/auth/login")
                 .header("X-Store-ID", store)
                 .header("Content-Type", "application/json")
-                .body(Body::from(json!({"email": email, "password": password}).to_string()))
+                .body(Body::from(
+                    json!({"email": email, "password": password}).to_string(),
+                ))
                 .unwrap(),
         )
         .await
@@ -156,13 +158,15 @@ async fn call(
     uri: &str,
     body: Option<Value>,
 ) -> (StatusCode, Value) {
-    let res = app_with_db(p.clone()).oneshot(req(token, method, uri, body)).await.unwrap();
+    let res = app_with_db(p.clone())
+        .oneshot(req(token, method, uri, body))
+        .await
+        .unwrap();
     let status = res.status();
     let bytes = to_bytes(res.into_body(), 8192).await.unwrap();
     // Rejeições do extractor Axum (422) vêm em texto puro, não JSON.
-    let json = serde_json::from_slice(&bytes).unwrap_or(Value::String(
-        String::from_utf8_lossy(&bytes).into_owned(),
-    ));
+    let json = serde_json::from_slice(&bytes)
+        .unwrap_or(Value::String(String::from_utf8_lossy(&bytes).into_owned()));
     (status, json)
 }
 
@@ -190,7 +194,14 @@ async fn gerente_cria_lista_busca_e_detalha() {
     let gerente = token_for(&p, &store, UserRole::Manager).await;
     let sku = uniq("ARROZ31");
 
-    let (s, j) = call(&p, Some(&gerente), "POST", "/api/v1/products", Some(produto_valido(&sku))).await;
+    let (s, j) = call(
+        &p,
+        Some(&gerente),
+        "POST",
+        "/api/v1/products",
+        Some(produto_valido(&sku)),
+    )
+    .await;
     assert_eq!(s, StatusCode::CREATED, "{j}");
     assert_eq!(j["store_id"], store);
     assert_eq!(j["sku"], sku);
@@ -200,7 +211,14 @@ async fn gerente_cria_lista_busca_e_detalha() {
 
     // Detalhe e listagem. Dinheiro sai como string (rust_decimal: sem perda
     // de precisão via float) — e entrou como número, provando o parse exato.
-    let (s, j) = call(&p, Some(&gerente), "GET", &format!("/api/v1/products/{id}"), None).await;
+    let (s, j) = call(
+        &p,
+        Some(&gerente),
+        "GET",
+        &format!("/api/v1/products/{id}"),
+        None,
+    )
+    .await;
     assert_eq!(s, StatusCode::OK);
     assert_eq!(j["price"], "27.99");
     assert_eq!(j["cost"], "21.50");
@@ -210,11 +228,25 @@ async fn gerente_cria_lista_busca_e_detalha() {
 
     // Busca ?q por nome, sku e barcode.
     for q in ["arroz", &sku.to_lowercase(), "7891234567890"] {
-        let (s, j) = call(&p, Some(&gerente), "GET", &format!("/api/v1/products?q={q}"), None).await;
+        let (s, j) = call(
+            &p,
+            Some(&gerente),
+            "GET",
+            &format!("/api/v1/products?q={q}"),
+            None,
+        )
+        .await;
         assert_eq!(s, StatusCode::OK);
         assert_eq!(j.as_array().unwrap().len(), 1, "q={q}");
     }
-    let (s, j) = call(&p, Some(&gerente), "GET", "/api/v1/products?q=feijao-xyz", None).await;
+    let (s, j) = call(
+        &p,
+        Some(&gerente),
+        "GET",
+        "/api/v1/products?q=feijao-xyz",
+        None,
+    )
+    .await;
     assert_eq!(s, StatusCode::OK);
     assert!(j.as_array().unwrap().is_empty());
 }
@@ -247,7 +279,14 @@ async fn campos_fora_do_dominio_retornam_422() {
         ("origem 9", caso("icms_origin", json!("9"))),
         ("alíquota >100", caso("icms_rate", json!(101))),
     ] {
-        let (s, j) = call(&p, Some(&gerente), "POST", "/api/v1/products", Some(payload)).await;
+        let (s, j) = call(
+            &p,
+            Some(&gerente),
+            "POST",
+            "/api/v1/products",
+            Some(payload),
+        )
+        .await;
         assert_eq!(s, StatusCode::UNPROCESSABLE_ENTITY, "{nome}: {j}");
         assert_eq!(j["code"], "UNPROCESSABLE");
     }
@@ -255,7 +294,14 @@ async fn campos_fora_do_dominio_retornam_422() {
     // NCM ausente: extractor barra antes do handler (422 texto puro).
     let mut sem_ncm = base.clone();
     sem_ncm.as_object_mut().unwrap().remove("ncm");
-    let (s, _) = call(&p, Some(&gerente), "POST", "/api/v1/products", Some(sem_ncm)).await;
+    let (s, _) = call(
+        &p,
+        Some(&gerente),
+        "POST",
+        "/api/v1/products",
+        Some(sem_ncm),
+    )
+    .await;
     assert_eq!(s, StatusCode::UNPROCESSABLE_ENTITY);
 }
 
@@ -268,21 +314,56 @@ async fn caixa_barrado_em_escrita_mas_leitura_liberada() {
     let gerente = token_for(&p, &store, UserRole::Manager).await;
     let caixa = token_for(&p, &store, UserRole::Cashier).await;
 
-    let (s, _) = call(&p, Some(&caixa), "POST", "/api/v1/products", Some(produto_valido(&uniq("RB31")))).await;
+    let (s, _) = call(
+        &p,
+        Some(&caixa),
+        "POST",
+        "/api/v1/products",
+        Some(produto_valido(&uniq("RB31"))),
+    )
+    .await;
     assert_eq!(s, StatusCode::FORBIDDEN);
 
     // Produto criado pelo gerente para os GETs do caixa.
-    let (s, j) = call(&p, Some(&gerente), "POST", "/api/v1/products", Some(produto_valido(&uniq("RB31B")))).await;
+    let (s, j) = call(
+        &p,
+        Some(&gerente),
+        "POST",
+        "/api/v1/products",
+        Some(produto_valido(&uniq("RB31B"))),
+    )
+    .await;
     assert_eq!(s, StatusCode::CREATED);
     let id = j["id"].as_str().unwrap().to_string();
 
     let (s, _) = call(&p, Some(&caixa), "GET", "/api/v1/products", None).await;
     assert_eq!(s, StatusCode::OK);
-    let (s, _) = call(&p, Some(&caixa), "GET", &format!("/api/v1/products/{id}"), None).await;
+    let (s, _) = call(
+        &p,
+        Some(&caixa),
+        "GET",
+        &format!("/api/v1/products/{id}"),
+        None,
+    )
+    .await;
     assert_eq!(s, StatusCode::OK);
-    let (s, j) = call(&p, Some(&caixa), "PUT", &format!("/api/v1/products/{id}"), Some(json!({"name": "X"}))).await;
+    let (s, j) = call(
+        &p,
+        Some(&caixa),
+        "PUT",
+        &format!("/api/v1/products/{id}"),
+        Some(json!({"name": "X"})),
+    )
+    .await;
     assert_eq!(s, StatusCode::FORBIDDEN, "{j}");
-    let (s, _) = call(&p, Some(&caixa), "DELETE", &format!("/api/v1/products/{id}"), None).await;
+    let (s, _) = call(
+        &p,
+        Some(&caixa),
+        "DELETE",
+        &format!("/api/v1/products/{id}"),
+        None,
+    )
+    .await;
     assert_eq!(s, StatusCode::FORBIDDEN);
     // Sem credencial: 401 em tudo.
     let (s, _) = call(&p, None, "GET", "/api/v1/products", None).await;
@@ -297,14 +378,25 @@ async fn isolamento_tenant_404_e_soft_delete() {
     let ta = token_for(&p, &a, UserRole::Manager).await;
     let tb = token_for(&p, &b, UserRole::Manager).await;
 
-    let (s, j) = call(&p, Some(&ta), "POST", "/api/v1/products", Some(produto_valido(&uniq("TA31")))).await;
+    let (s, j) = call(
+        &p,
+        Some(&ta),
+        "POST",
+        "/api/v1/products",
+        Some(produto_valido(&uniq("TA31"))),
+    )
+    .await;
     assert_eq!(s, StatusCode::CREATED);
     let id = j["id"].as_str().unwrap().to_string();
 
     // Outra loja: 404 em detalhe/PUT/DELETE (nunca vaza nem confirma existência).
     for (m, uri, body) in [
         ("GET", format!("/api/v1/products/{id}"), None),
-        ("PUT", format!("/api/v1/products/{id}"), Some(json!({"name": "Spy"}))),
+        (
+            "PUT",
+            format!("/api/v1/products/{id}"),
+            Some(json!({"name": "Spy"})),
+        ),
         ("DELETE", format!("/api/v1/products/{id}"), None),
     ] {
         let (s, _) = call(&p, Some(&tb), m, &uri, body).await;
@@ -316,13 +408,27 @@ async fn isolamento_tenant_404_e_soft_delete() {
     assert!(j.as_array().unwrap().is_empty());
 
     // PUT válido na loja dona.
-    let (s, j) = call(&p, Some(&ta), "PUT", &format!("/api/v1/products/{id}"), Some(json!({"name": "Arroz T1 1kg", "cfop": "6102"}))).await;
+    let (s, j) = call(
+        &p,
+        Some(&ta),
+        "PUT",
+        &format!("/api/v1/products/{id}"),
+        Some(json!({"name": "Arroz T1 1kg", "cfop": "6102"})),
+    )
+    .await;
     assert_eq!(s, StatusCode::OK, "{j}");
     assert_eq!(j["name"], "Arroz T1 1kg");
     assert_eq!(j["cfop"], "6102");
 
     // DELETE é soft: some da lista, linha preservada com is_active=false.
-    let (s, j) = call(&p, Some(&ta), "DELETE", &format!("/api/v1/products/{id}"), None).await;
+    let (s, j) = call(
+        &p,
+        Some(&ta),
+        "DELETE",
+        &format!("/api/v1/products/{id}"),
+        None,
+    )
+    .await;
     assert_eq!(s, StatusCode::OK);
     assert!(!j["is_active"].as_bool().unwrap());
     let (s, j) = call(&p, Some(&ta), "GET", "/api/v1/products", None).await;
@@ -345,11 +451,36 @@ async fn sku_duplicado_409_mas_reuso_entre_lojas() {
     let tb = token_for(&p, &b, UserRole::Manager).await;
     let sku = uniq("DUP31");
 
-    let (s1, _) = call(&p, Some(&ta), "POST", "/api/v1/products", Some(produto_valido(&sku))).await;
+    let (s1, _) = call(
+        &p,
+        Some(&ta),
+        "POST",
+        "/api/v1/products",
+        Some(produto_valido(&sku)),
+    )
+    .await;
     assert_eq!(s1, StatusCode::CREATED);
-    let (s2, j2) = call(&p, Some(&ta), "POST", "/api/v1/products", Some(produto_valido(&sku))).await;
+    let (s2, j2) = call(
+        &p,
+        Some(&ta),
+        "POST",
+        "/api/v1/products",
+        Some(produto_valido(&sku)),
+    )
+    .await;
     assert_eq!(s2, StatusCode::CONFLICT);
     assert_eq!(j2["code"], "CONFLICT");
-    let (s3, _) = call(&p, Some(&tb), "POST", "/api/v1/products", Some(produto_valido(&sku))).await;
-    assert_eq!(s3, StatusCode::CREATED, "mesmo sku em outra loja deve passar");
+    let (s3, _) = call(
+        &p,
+        Some(&tb),
+        "POST",
+        "/api/v1/products",
+        Some(produto_valido(&sku)),
+    )
+    .await;
+    assert_eq!(
+        s3,
+        StatusCode::CREATED,
+        "mesmo sku em outra loja deve passar"
+    );
 }

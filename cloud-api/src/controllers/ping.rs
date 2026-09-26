@@ -28,5 +28,8 @@ pub struct PingResponse {
     ),
 )]
 pub async fn ping(ctx: TenantContext) -> Json<PingResponse> {
-    Json(PingResponse { status: "pong".to_string(), store_id: ctx.store_id })
+    Json(PingResponse {
+        status: "pong".to_string(),
+        store_id: ctx.store_id,
+    })
 }

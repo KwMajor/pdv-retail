@@ -113,9 +113,7 @@ fn pool_of(state: &crate::AppState) -> Result<sqlx::PgPool, AppError> {
 fn service_error(e: ProductError) -> AppError {
     match e {
         ProductError::Invalid(m) => AppError::Unprocessable(m),
-        ProductError::SkuTaken => {
-            AppError::Conflict("sku já cadastrado nesta loja".to_string())
-        }
+        ProductError::SkuTaken => AppError::Conflict("sku já cadastrado nesta loja".to_string()),
         ProductError::NotFound => AppError::NotFound,
         ProductError::Db(e) => AppError::Db(e),
     }
@@ -180,10 +178,17 @@ pub async fn list_products_handler(
     Query(query): Query<ListProductsQuery>,
 ) -> Result<Json<Vec<ProductResponse>>, AppError> {
     let repo = PgProductRepository::new(pool_of(&state)?);
-    let products = list_products(&repo, ctx.store_id, query.q.as_deref(), query.limit.unwrap_or(50))
-        .await
-        .map_err(service_error)?;
-    Ok(Json(products.into_iter().map(ProductResponse::from).collect()))
+    let products = list_products(
+        &repo,
+        ctx.store_id,
+        query.q.as_deref(),
+        query.limit.unwrap_or(50),
+    )
+    .await
+    .map_err(service_error)?;
+    Ok(Json(
+        products.into_iter().map(ProductResponse::from).collect(),
+    ))
 }
 
 #[utoipa::path(
@@ -204,7 +209,9 @@ pub async fn get_product_handler(
     Path(id): Path<Uuid>,
 ) -> Result<Json<ProductResponse>, AppError> {
     let repo = PgProductRepository::new(pool_of(&state)?);
-    let product = get_product(&repo, ctx.store_id, id).await.map_err(service_error)?;
+    let product = get_product(&repo, ctx.store_id, id)
+        .await
+        .map_err(service_error)?;
     Ok(Json(ProductResponse::from(product)))
 }
 

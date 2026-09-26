@@ -5,7 +5,7 @@ use serde_json::json;
 use sqlx::postgres::PgPoolOptions;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
-use pdv_cloud_api::{AppState, app_router, auth::JwtKeys, config};
+use pdv_cloud_api::{AppState, app_router, config, jwt::JwtKeys};
 
 use config::Config;
 
@@ -54,7 +54,11 @@ async fn main() {
         tracing::info!("docs OpenAPI desativadas (APP_ENV={})", cfg.app_env);
     }
 
-    let state = AppState { pool, jwt, expose_docs };
+    let state = AppState {
+        pool,
+        jwt,
+        expose_docs,
+    };
     let app = app_router(state);
 
     let addr = SocketAddr::from(([0, 0, 0, 0], cfg.port));

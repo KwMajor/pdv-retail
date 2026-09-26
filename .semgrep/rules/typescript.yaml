@@ -1,0 +1,79 @@
+# Regras TypeScript/React sob medida. Bloqueantes no CI.
+# Protegem: JWT fora de storage do navegador (US02 Task 2.4) e XSS.
+rules:
+  - id: ts-sem-web-storage
+    languages: [typescript, javascript]
+    severity: ERROR
+    message: >-
+      localStorage/sessionStorage proibidos no frontend (JWT só em memória
+      + cofre via IPC). Nem em comentário: o guard de teste varre literais.
+    paths:
+      include:
+        - desktop-client/src/**/*.ts
+        - desktop-client/src/**/*.tsx
+    patterns:
+      - pattern-either:
+          - pattern: localStorage
+          - pattern: sessionStorage
+    metadata:
+      owasp: "A02:2021 - Cryptographic Failures"
+
+  - id: ts-sem-dangerous-html
+    languages: [typescript, javascript]
+    severity: ERROR
+    message: >-
+      dangerouslySetInnerHTML proibido (XSS). Renderize texto como texto;
+      se HTML for inevitável, sanitize + revisão explícita.
+    paths:
+      include:
+        - desktop-client/src/**/*.ts
+        - desktop-client/src/**/*.tsx
+    pattern: dangerouslySetInnerHTML
+    metadata:
+      owasp: "A03:2021 - Injection"
+
+  - id: ts-sem-any
+    languages: [typescript]
+    severity: ERROR
+    message: >-
+      `any` desliga o type-checker (vaza erro de domínio p/ produção).
+      Type o dado (union, interface, unknown + narrowing).
+    paths:
+      include:
+        - desktop-client/src/**/*.ts
+        - desktop-client/src/**/*.tsx
+    # Regex de propósito: casa o tipo em qualquer posição (anotação, arg,
+    # retorno, genérico). `$X as any` cobre casts.
+    patterns:
+      - pattern-either:
+          - pattern-regex: ':\s*any\b'
+          - pattern: $X as any
+
+  - id: ts-sem-non-null
+    languages: [typescript]
+    severity: ERROR
+    message: >-
+      Non-null assertion (`x!`) esconde nulo em runtime (tela branca no PDV).
+      Trate Option com early-return/optional chaining.
+    paths:
+      include:
+        - desktop-client/src/**/*.ts
+        - desktop-client/src/**/*.tsx
+    pattern: "$X!"
+
+  - id: ts-sem-console-log
+    languages: [typescript, javascript]
+    severity: ERROR
+    message: >-
+      console.log/warn/error proibidos em código (vazam token/PII no console
+      do WebView). Use tratamento de erro visível ao operador.
+    paths:
+      include:
+        - desktop-client/src/**/*.ts
+        - desktop-client/src/**/*.tsx
+    patterns:
+      - pattern-either:
+          - pattern: console.log(...)
+          - pattern: console.warn(...)
+          - pattern: console.error(...)
+          - pattern: console.debug(...)
