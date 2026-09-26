@@ -54,9 +54,8 @@ export function ncmError(digits: string): string | null {
   return null;
 }
 
-function isDigitsOf(value: string, len: number): boolean {
-  return new RegExp(`^[0-9]{${len}}$`).test(value);
-}
+const DIGITS_7 = /^[0-9]{7}$/;
+const DIGITS_4 = /^[0-9]{4}$/;
 
 export function fieldError(
   kind: "cest" | "cfop" | "icms_origin" | "icms_rate" | "sku" | "name",
@@ -66,10 +65,10 @@ export function fieldError(
   switch (kind) {
     case "cest":
       if (v === "") return null;
-      return isDigitsOf(v, 7) ? null : "CEST deve ter 7 dígitos.";
+      return DIGITS_7.test(v) ? null : "CEST deve ter 7 dígitos.";
     case "cfop":
       if (v === "") return null;
-      return isDigitsOf(v, 4) ? null : "CFOP deve ter 4 dígitos.";
+      return DIGITS_4.test(v) ? null : "CFOP deve ter 4 dígitos.";
     case "icms_origin":
       if (v === "") return null;
       return /^[0-8]$/.test(v) ? null : "Origem deve ser um dígito de 0 a 8.";

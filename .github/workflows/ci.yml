@@ -1,0 +1,130 @@
+# CI exigente: estilo, testes, supply chain, frontend e Semgrep (bloqueante).
+# Padrões: actions pinadas, least-privilege, --locked, cancel-in-progress.
+name: ci
+
+on:
+  push:
+    branches: [dev, main]
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  fmt-clippy:
+    name: fmt + clippy
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: cloud-api
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: dtolnay/rust-toolchain@6bed0761d98439e5a578e2877258200ad565ba87 # stable
+        with:
+          components: clippy, rustfmt
+      - uses: Swatinem/rust-cache@49a0bdc70d2e1b713ca9e2869b211fcce03d3c1c # v2
+        with:
+          shared-key: ci
+          workspaces: cloud-api
+      - run: cargo fmt --all --check
+      - run: cargo clippy --all-targets --locked -- -D warnings
+
+  backend-test:
+    name: backend test + release
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: cloud-api
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: pdv
+          POSTGRES_PASSWORD: pdv
+          POSTGRES_DB: pdv
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U pdv -d pdv"
+          --health-interval 5s --health-timeout 3s --health-retries 10
+    env:
+      DATABASE_URL: postgres://pdv:pdv@localhost:5432/pdv
+      TEST_DATABASE_URL: postgres://pdv:pdv@localhost:5432/pdv_test
+      JWT_SECRET: ci-only-secret-com-mais-de-32-chars
+      APP_ENV: test
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: dtolnay/rust-toolchain@6bed0761d98439e5a578e2877258200ad565ba87 # stable
+      - uses: Swatinem/rust-cache@49a0bdc70d2e1b713ca9e2869b211fcce03d3c1c # v2
+        with:
+          shared-key: ci
+          workspaces: cloud-api
+      - name: sqlx-cli
+        run: |
+          command -v sqlx >/dev/null || cargo install sqlx-cli --no-default-features --features postgres
+      - run: sqlx migrate run
+      - run: cargo test --locked
+      - run: cargo sqlx prepare --check
+      - run: cargo build --release --locked
+
+  supply-chain:
+    name: cargo-deny + dependency review
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: EmbarkStudios/cargo-deny-action@b66acf5e9fe20f8aba065be86778a8a4c846f902 # v2
+        with:
+          manifest-path: cloud-api/Cargo.toml
+          log-level: warning
+          command: check
+      - uses: actions/dependency-review-action@2031cfc080254a8a887f58cffee85186f0e49e48 # v4
+        if: github.event_name == 'pull_request'
+
+  frontend:
+    name: frontend tsc + build + audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: desktop-client
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: desktop-client/package-lock.json
+      - run: npm ci --ignore-scripts
+      - run: ./node_modules/.bin/tsc --noEmit
+      - run: npm run build
+      - run: npm audit --omit=dev --audit-level=moderate
+
+  semgrep:
+    name: semgrep (bloqueante)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: scan
+        run: |
+          pip install --quiet semgrep
+          semgrep scan --config auto --config .semgrep/rules --sarif --output semgrep.sarif
+      - uses: github/codeql-action/upload-sarif@1190a975f95ce23525efb6a3fc21ea29567c1b52 # v3
+        if: always()
+        with:
+          sarif_file: semgrep.sarif
+          category: semgrep

@@ -47,7 +47,5 @@ pub use sale::{NewSale, PgSaleRepository, SaleRepository};
 pub use sale_item::{NewSaleItem, PgSaleItemRepository, SaleItemRepository};
 pub use stock::{PgStockRepository, StockRepository, UpsertStock};
 pub use stock_movement::{NewStockMovement, PgStockMovementRepository, StockMovementRepository};
-pub use store_settings::{
-    NewStoreSettings, PgStoreSettingsRepository, StoreSettingsRepository,
-};
+pub use store_settings::{NewStoreSettings, PgStoreSettingsRepository, StoreSettingsRepository};
 pub use user::{NewUser, PgUserRepository, UserRepository};

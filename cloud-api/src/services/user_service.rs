@@ -57,14 +57,18 @@ pub async fn create_user(
         return Err(CreateUserError::Invalid("nome é obrigatório".to_string()));
     }
     if name.chars().count() > NAME_MAX_CHARS {
-        return Err(CreateUserError::Invalid("nome deve ter no máximo 255 caracteres".to_string()));
+        return Err(CreateUserError::Invalid(
+            "nome deve ter no máximo 255 caracteres".to_string(),
+        ));
     }
     let email = input.email.trim().to_lowercase();
     if email.is_empty() || !email.contains('@') {
         return Err(CreateUserError::Invalid("email inválido".to_string()));
     }
     if email.chars().count() > EMAIL_MAX_CHARS {
-        return Err(CreateUserError::Invalid("email deve ter no máximo 255 caracteres".to_string()));
+        return Err(CreateUserError::Invalid(
+            "email deve ter no máximo 255 caracteres".to_string(),
+        ));
     }
     let password_chars = input.password.chars().count();
     if password_chars < PASSWORD_MIN_CHARS {
@@ -80,11 +84,7 @@ pub async fn create_user(
 
     // Checagem amigável antes de inserir; o UNIQUE do banco é o backstop
     // contra condição de corrida (mapeado para EmailTaken abaixo).
-    if repo
-        .find_by_email(store_id, &email)
-        .await?
-        .is_some()
-    {
+    if repo.find_by_email(store_id, &email).await?.is_some() {
         return Err(CreateUserError::EmailTaken);
     }
 
@@ -126,7 +126,15 @@ mod tests {
         assert_ne!(a, b);
         assert!(a.starts_with("$argon2id$"));
         let parsed = PasswordHash::new(&a).unwrap();
-        assert!(Argon2::default().verify_password(b"segredo-123", &parsed).is_ok());
-        assert!(Argon2::default().verify_password(b"errada", &parsed).is_err());
+        assert!(
+            Argon2::default()
+                .verify_password(b"segredo-123", &parsed)
+                .is_ok()
+        );
+        assert!(
+            Argon2::default()
+                .verify_password(b"errada", &parsed)
+                .is_err()
+        );
     }
 }

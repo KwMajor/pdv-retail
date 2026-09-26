@@ -29,11 +29,7 @@ pub struct NewSaleItem {
 
 pub trait SaleItemRepository {
     async fn create(&self, input: NewSaleItem) -> Result<SaleItem, sqlx::Error>;
-    async fn find_by_id(
-        &self,
-        store_id: Uuid,
-        id: Uuid,
-    ) -> Result<Option<SaleItem>, sqlx::Error>;
+    async fn find_by_id(&self, store_id: Uuid, id: Uuid) -> Result<Option<SaleItem>, sqlx::Error>;
     async fn list_by_sale(
         &self,
         store_id: Uuid,
@@ -77,11 +73,7 @@ impl SaleItemRepository for PgSaleItemRepository {
         .await
     }
 
-    async fn find_by_id(
-        &self,
-        store_id: Uuid,
-        id: Uuid,
-    ) -> Result<Option<SaleItem>, sqlx::Error> {
+    async fn find_by_id(&self, store_id: Uuid, id: Uuid) -> Result<Option<SaleItem>, sqlx::Error> {
         sqlx::query_as!(
             SaleItem,
             "SELECT id, store_id, sale_id, product_id, quantity, unit_price, unit_cost_price, discount, total, ncm_code, cest, cfop, icms_origin, icms_rate

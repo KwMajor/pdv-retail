@@ -14,16 +14,8 @@ pub struct UpsertStock {
 }
 
 pub trait StockRepository {
-    async fn get(
-        &self,
-        store_id: Uuid,
-        product_id: Uuid,
-    ) -> Result<Option<Stock>, sqlx::Error>;
-    async fn list_by_store(
-        &self,
-        store_id: Uuid,
-        limit: i64,
-    ) -> Result<Vec<Stock>, sqlx::Error>;
+    async fn get(&self, store_id: Uuid, product_id: Uuid) -> Result<Option<Stock>, sqlx::Error>;
+    async fn list_by_store(&self, store_id: Uuid, limit: i64) -> Result<Vec<Stock>, sqlx::Error>;
     /// Cria ou substitui o saldo (`UNIQUE(store_id, product_id)`).
     async fn upsert(&self, input: UpsertStock) -> Result<Stock, sqlx::Error>;
 }
@@ -40,11 +32,7 @@ impl PgStockRepository {
 }
 
 impl StockRepository for PgStockRepository {
-    async fn get(
-        &self,
-        store_id: Uuid,
-        product_id: Uuid,
-    ) -> Result<Option<Stock>, sqlx::Error> {
+    async fn get(&self, store_id: Uuid, product_id: Uuid) -> Result<Option<Stock>, sqlx::Error> {
         sqlx::query_as!(
             Stock,
             "SELECT id, store_id, product_id, quantity, created_at, updated_at
@@ -56,11 +44,7 @@ impl StockRepository for PgStockRepository {
         .await
     }
 
-    async fn list_by_store(
-        &self,
-        store_id: Uuid,
-        limit: i64,
-    ) -> Result<Vec<Stock>, sqlx::Error> {
+    async fn list_by_store(&self, store_id: Uuid, limit: i64) -> Result<Vec<Stock>, sqlx::Error> {
         sqlx::query_as!(
             Stock,
             "SELECT id, store_id, product_id, quantity, created_at, updated_at

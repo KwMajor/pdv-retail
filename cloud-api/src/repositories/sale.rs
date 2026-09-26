@@ -22,23 +22,11 @@ pub struct NewSale {
 
 pub trait SaleRepository {
     async fn create(&self, input: NewSale) -> Result<Sale, sqlx::Error>;
-    async fn find_by_id(
-        &self,
-        store_id: Uuid,
-        id: Uuid,
-    ) -> Result<Option<Sale>, sqlx::Error>;
-    async fn list_by_store(
-        &self,
-        store_id: Uuid,
-        limit: i64,
-    ) -> Result<Vec<Sale>, sqlx::Error>;
+    async fn find_by_id(&self, store_id: Uuid, id: Uuid) -> Result<Option<Sale>, sqlx::Error>;
+    async fn list_by_store(&self, store_id: Uuid, limit: i64) -> Result<Vec<Sale>, sqlx::Error>;
     /// Transição de status (ex: `cancelled`). Venda nunca é apagada.
-    async fn set_status(
-        &self,
-        store_id: Uuid,
-        id: Uuid,
-        status: &str,
-    ) -> Result<Sale, sqlx::Error>;
+    async fn set_status(&self, store_id: Uuid, id: Uuid, status: &str)
+    -> Result<Sale, sqlx::Error>;
 }
 
 #[derive(Debug, Clone)]
@@ -73,11 +61,7 @@ impl SaleRepository for PgSaleRepository {
         .await
     }
 
-    async fn find_by_id(
-        &self,
-        store_id: Uuid,
-        id: Uuid,
-    ) -> Result<Option<Sale>, sqlx::Error> {
+    async fn find_by_id(&self, store_id: Uuid, id: Uuid) -> Result<Option<Sale>, sqlx::Error> {
         sqlx::query_as!(
             Sale,
             "SELECT id, store_id, customer_id, anonymous_cpf_cnpj, status, subtotal, discount, total, change_amount, created_by, created_at
@@ -89,11 +73,7 @@ impl SaleRepository for PgSaleRepository {
         .await
     }
 
-    async fn list_by_store(
-        &self,
-        store_id: Uuid,
-        limit: i64,
-    ) -> Result<Vec<Sale>, sqlx::Error> {
+    async fn list_by_store(&self, store_id: Uuid, limit: i64) -> Result<Vec<Sale>, sqlx::Error> {
         sqlx::query_as!(
             Sale,
             "SELECT id, store_id, customer_id, anonymous_cpf_cnpj, status, subtotal, discount, total, change_amount, created_by, created_at

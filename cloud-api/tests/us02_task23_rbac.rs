@@ -121,7 +121,9 @@ async fn token_for(p: &sqlx::PgPool, store: &str, role: UserRole) -> String {
                 .uri("/api/v1/auth/login")
                 .header("X-Store-ID", store)
                 .header("Content-Type", "application/json")
-                .body(Body::from(json!({"email": email, "password": "segredo-123"}).to_string()))
+                .body(Body::from(
+                    json!({"email": email, "password": "segredo-123"}).to_string(),
+                ))
                 .unwrap(),
         )
         .await
@@ -160,7 +162,11 @@ async fn matriz_rbac_gestao_exige_admin_ou_manager() {
             )
             .await
             .unwrap();
-        assert_eq!(res.status(), esperado, "token com papel inadequado passou/falhou");
+        assert_eq!(
+            res.status(),
+            esperado,
+            "token com papel inadequado passou/falhou"
+        );
     }
 
     // Sem credencial: 401 antes de qualquer checagem de papel.

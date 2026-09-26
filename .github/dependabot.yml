@@ -1,0 +1,24 @@
+# Updates semanais: actions, Rust e npm (CI barra CVE via deny/audit).
+# Cooldown 7 dias (mínimo exigido pelo gate): evita PRs no calor do release.
+version: 2
+cooldown:
+  default-days: 7
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7
+  - package-ecosystem: cargo
+    directory: /cloud-api
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7
+  - package-ecosystem: npm
+    directory: /desktop-client
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7

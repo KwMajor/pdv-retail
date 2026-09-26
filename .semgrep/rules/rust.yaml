@@ -1,0 +1,79 @@
+# Regras Rust sob medida (US de fundação SaaS). Bloqueantes no CI.
+# Convenções do repo que elas protegem:
+# - OWASP A03: só prepared statements ($1, $2...) em repositories;
+# - sem unwrap/panic em produção (AppError / Result<T, String>);
+# - sem println!/dbg! (tracing é o log oficial).
+rules:
+  - id: repo-sem-format
+    languages: [rust]
+    severity: ERROR
+    message: >-
+      repositories/ proíbe montagem de SQL por concatenação (OWASP A03).
+      Use query!/query_as! com binds ($1, $2...). Nem em comentário:
+      o guard de teste também varre literais.
+    paths:
+      include:
+        - cloud-api/src/repositories/*.rs
+        - desktop-client/src-tauri/src/vault.rs
+    patterns:
+      - pattern-either:
+          - pattern: format!(...)
+          - pattern: concat!(...)
+          - pattern: $S.push_str(...)
+      - pattern-not-inside: |
+          #[cfg(test)]
+          mod tests {
+            ...
+          }
+    metadata:
+      owasp: "A03:2021 - Injection"
+
+  - id: prod-sem-unwrap-panic
+    languages: [rust]
+    severity: ERROR
+    message: >-
+      unwrap()/expect()/panic!/todo! proibidos em código de produção.
+      Retorne Result (AppError no Axum, Result<T, String> no Tauri).
+      Testes (mod tests) estão liberados; main.rs (fail-fast de boot com
+      mensagem) é exceção documentada.
+    paths:
+      include:
+        - cloud-api/src/**/*.rs
+        - desktop-client/src-tauri/src/*.rs
+      exclude:
+        - cloud-api/src/main.rs
+        - desktop-client/src-tauri/src/main.rs
+    patterns:
+      - pattern-either:
+          - pattern: $X.unwrap()
+          - pattern: $X.expect(...)
+          - pattern: panic!(...)
+          - pattern: todo!(...)
+          - pattern: unimplemented!(...)
+      - pattern-not-inside: |
+          #[cfg(test)]
+          mod tests {
+            ...
+          }
+    metadata:
+      owasp: "A04:2021 - Insecure Design"
+
+  - id: prod-sem-println-dbg
+    languages: [rust]
+    severity: ERROR
+    message: >-
+      println!/dbg! proibidos (vazam PII em stdout e poluem log).
+      Use tracing::{info, warn, error} (sem interpolar segredos/PII).
+    paths:
+      include:
+        - cloud-api/src/**/*.rs
+        - desktop-client/src-tauri/src/*.rs
+    patterns:
+      - pattern-either:
+          - pattern: println!(...)
+          - pattern: dbg!(...)
+      - pattern-not-inside: |
+          #[cfg(test)]
+          mod tests {
+            ...
+          }

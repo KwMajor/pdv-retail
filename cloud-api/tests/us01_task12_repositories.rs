@@ -106,7 +106,10 @@ fn models_serializam_sem_perder_tipos() {
     let json = serde_json::to_value(&input).unwrap();
     // rust_decimal serializa dinheiro como string: sem perda de precisão via float.
     assert_eq!(json["price"], serde_json::Value::String("10.99".into()));
-    assert_eq!(json["store_id"], serde_json::Value::String(store_id.to_string()));
+    assert_eq!(
+        json["store_id"],
+        serde_json::Value::String(store_id.to_string())
+    );
     // E o roundtrip preserva os tipos exatos.
     let back: NewProduct = serde_json::from_value(json).unwrap();
     assert_eq!(back.price, dec(1099));
@@ -181,10 +184,21 @@ async fn produto_isolado_por_store_id_via_repo() {
 
     // Tenant correto enxerga; tenant errado recebe None (nunca a linha alheia).
     assert_eq!(
-        products.find_by_id(a.id, created.id).await.unwrap().unwrap().id,
+        products
+            .find_by_id(a.id, created.id)
+            .await
+            .unwrap()
+            .unwrap()
+            .id,
         created.id
     );
-    assert!(products.find_by_id(b.id, created.id).await.unwrap().is_none());
+    assert!(
+        products
+            .find_by_id(b.id, created.id)
+            .await
+            .unwrap()
+            .is_none()
+    );
     assert!(products.find_by_sku(b.id, &sku).await.unwrap().is_none());
     assert!(products.list_active(b.id, 50).await.unwrap().is_empty());
     assert_eq!(products.list_active(a.id, 50).await.unwrap().len(), 1);
@@ -216,13 +230,24 @@ async fn usuario_soft_delete_via_repo() {
         .unwrap();
     assert!(created.is_active);
     assert_eq!(
-        users.find_by_email(store.id, &email).await.unwrap().unwrap().id,
+        users
+            .find_by_email(store.id, &email)
+            .await
+            .unwrap()
+            .unwrap()
+            .id,
         created.id
     );
     let off = users.deactivate(store.id, created.id).await.unwrap();
     assert!(!off.is_active);
     // Linha preservada (FKs do histórico) mas fora da listagem de ativos.
-    assert!(users.find_by_id(store.id, created.id).await.unwrap().is_some());
+    assert!(
+        users
+            .find_by_id(store.id, created.id)
+            .await
+            .unwrap()
+            .is_some()
+    );
     assert!(users.list_active(store.id, 50).await.unwrap().is_empty());
 }
 
@@ -293,7 +318,10 @@ async fn sale_item_snapshot_e_payment_via_repo() {
         })
         .await
         .unwrap();
-    products.set_price(store.id, product.id, dec(799)).await.unwrap();
+    products
+        .set_price(store.id, product.id, dec(799))
+        .await
+        .unwrap();
     sqlx::query("UPDATE product SET cost = $1 WHERE id = $2::uuid")
         .bind(dec(400))
         .bind(product.id)
@@ -304,7 +332,10 @@ async fn sale_item_snapshot_e_payment_via_repo() {
     assert_eq!(frozen.unit_price, dec(599));
     assert_eq!(frozen.unit_cost_price, dec(350), "custo congelado na venda");
     assert_eq!(frozen.ncm_code.as_deref(), Some("04012010"));
-    assert_eq!(items.list_by_sale(store.id, sale.id).await.unwrap().len(), 1);
+    assert_eq!(
+        items.list_by_sale(store.id, sale.id).await.unwrap().len(),
+        1
+    );
 
     // Pagamento fracionado: PIX + dinheiro com troco implícito.
     payments
@@ -432,7 +463,10 @@ async fn sale_item_congela_custo_para_lucro_bruto() {
     let items = PgSaleItemRepository::new(pool.clone());
     let tag = uniq("lc");
     let store = stores
-        .create(NewStoreSettings { name: format!("Loja {tag}"), cnpj: format!("cnpj-{tag}") })
+        .create(NewStoreSettings {
+            name: format!("Loja {tag}"),
+            cnpj: format!("cnpj-{tag}"),
+        })
         .await
         .unwrap();
     let product = products
@@ -443,7 +477,10 @@ async fn sale_item_congela_custo_para_lucro_bruto() {
             name: "Custo".into(),
             price: dec(599),
             cost: dec(300),
-            ncm: None, cest: None, cfop: None, icms_origin: None,
+            ncm: None,
+            cest: None,
+            cfop: None,
+            icms_origin: None,
             icms_rate: Decimal::ZERO,
         })
         .await
@@ -473,7 +510,10 @@ async fn sale_item_congela_custo_para_lucro_bruto() {
             unit_cost_price: dec(300),
             discount: Decimal::ZERO,
             total: dec(1198),
-            ncm_code: None, cest: None, cfop: None, icms_origin: None,
+            ncm_code: None,
+            cest: None,
+            cfop: None,
+            icms_origin: None,
             icms_rate: Decimal::ZERO,
         })
         .await
@@ -498,7 +538,11 @@ async fn sale_item_congela_custo_para_lucro_bruto() {
     .fetch_one(&pool)
     .await
     .unwrap();
-    assert_eq!(lucro.unwrap(), dec(598), "lucro usa o custo congelado (5.99-3.00)*2");
+    assert_eq!(
+        lucro.unwrap(),
+        dec(598),
+        "lucro usa o custo congelado (5.99-3.00)*2"
+    );
 }
 
 /// Security Case (injeção): nenhum arquivo de `src/repositories/` pode montar
@@ -522,7 +566,8 @@ fn repositorios_proibem_montagem_dinamica_de_sql() {
             caminho.display()
         );
         // Todo SELECT/UPDATE/DELETE precisa filtrar por tenant…
-        let tem_dml = fonte.contains("SELECT") || fonte.contains("UPDATE") || fonte.contains("DELETE");
+        let tem_dml =
+            fonte.contains("SELECT") || fonte.contains("UPDATE") || fonte.contains("DELETE");
         // …exceto o repositório raiz (a loja É o tenant).
         let e_raiz = caminho.file_stem().and_then(|s| s.to_str()) == Some("store_settings");
         if tem_dml && !e_raiz {
@@ -534,5 +579,8 @@ fn repositorios_proibem_montagem_dinamica_de_sql() {
         }
         arquivos.push(caminho);
     }
-    assert!(arquivos.len() >= 11, "repositórios incompletos: {arquivos:?}");
+    assert!(
+        arquivos.len() >= 11,
+        "repositórios incompletos: {arquivos:?}"
+    );
 }

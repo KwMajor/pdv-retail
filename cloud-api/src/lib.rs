@@ -18,7 +18,10 @@ pub mod models;
 pub mod repositories;
 pub mod services;
 
-use axum::{Router, routing::{get, post}};
+use axum::{
+    Router,
+    routing::{get, post},
+};
 use sqlx::PgPool;
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
@@ -47,13 +50,23 @@ pub fn app_router(state: AppState) -> Router {
         .route(routes::USERS, post(controllers::users::create_user_handler))
         .route(routes::ME, get(controllers::users::me_handler))
         .route(routes::LOGIN, post(controllers::auth::login_handler))
-        .route(routes::PRODUCTS, post(controllers::products::create_product_handler).get(controllers::products::list_products_handler))
+        .route(
+            routes::PRODUCTS,
+            post(controllers::products::create_product_handler)
+                .get(controllers::products::list_products_handler),
+        )
         // Axum usa `:id`; no OpenAPI equivale a `PRODUCT_BY_ID` (`{id}`).
-        .route("/api/v1/products/:id", get(controllers::products::get_product_handler).put(controllers::products::update_product_handler).delete(controllers::products::delete_product_handler));
+        .route(
+            "/api/v1/products/:id",
+            get(controllers::products::get_product_handler)
+                .put(controllers::products::update_product_handler)
+                .delete(controllers::products::delete_product_handler),
+        );
     // O próprio SwaggerUi serve o JSON em OPENAPI_JSON + a UI em DOCS_UI.
     let app = if state.expose_docs {
         app.merge(
-            SwaggerUi::new(routes::DOCS_UI).url(routes::OPENAPI_JSON, crate::docs::ApiDoc::openapi()),
+            SwaggerUi::new(routes::DOCS_UI)
+                .url(routes::OPENAPI_JSON, crate::docs::ApiDoc::openapi()),
         )
     } else {
         app

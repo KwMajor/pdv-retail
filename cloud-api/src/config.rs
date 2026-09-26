@@ -20,11 +20,15 @@ impl Config {
             .ok()
             .and_then(|p| p.parse().ok())
             .unwrap_or(3000);
-        let jwt_secret =
-            std::env::var("JWT_SECRET").unwrap_or_else(|_| DEV_JWT_SECRET.to_string());
+        let jwt_secret = std::env::var("JWT_SECRET").unwrap_or_else(|_| DEV_JWT_SECRET.to_string());
         // Fail-closed: sem APP_ENV explícito, comporta-se como produção (docs off).
         let app_env = std::env::var("APP_ENV").unwrap_or_else(|_| "production".to_string());
-        Self { database_url, port, jwt_secret, app_env }
+        Self {
+            database_url,
+            port,
+            jwt_secret,
+            app_env,
+        }
     }
 }
 

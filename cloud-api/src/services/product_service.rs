@@ -144,7 +144,11 @@ fn ncm(ncm: &str) -> Result<String, ProductError> {
     Ok(ncm)
 }
 
-fn opt_digits(value: &Option<String>, len: usize, field: &str) -> Result<Option<String>, ProductError> {
+fn opt_digits(
+    value: &Option<String>,
+    len: usize,
+    field: &str,
+) -> Result<Option<String>, ProductError> {
     match value {
         None => Ok(None),
         Some(raw) => {
@@ -164,7 +168,12 @@ fn icms_origin(value: &Option<String>) -> Result<Option<String>, ProductError> {
         None => Ok(None),
         Some(raw) => {
             let code = raw.trim().to_string();
-            if code.len() != 1 || !matches!(code.as_str(), "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8") {
+            if code.len() != 1
+                || !matches!(
+                    code.as_str(),
+                    "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8"
+                )
+            {
                 return Err(ProductError::Invalid(
                     "origem do ICMS deve ser um dígito de 0 a 8".to_string(),
                 ));
@@ -219,12 +228,24 @@ pub async fn update_product(
     // Validação primeiro, fora de transação (não segura lock à toa).
     let patch = ProductPatch {
         name: input.name.map(|n| name(&n)).transpose()?,
-        barcode: input.barcode.map(|b| barcode(&Some(b))).transpose()?.flatten(),
+        barcode: input
+            .barcode
+            .map(|b| barcode(&Some(b)))
+            .transpose()?
+            .flatten(),
         price: input.price.map(|v| money(v, "price")).transpose()?,
         cost: input.cost.map(|v| money(v, "cost")).transpose()?,
         ncm: input.ncm.map(|n| ncm(&n)).transpose()?,
-        cest: input.cest.map(|c| opt_digits(&Some(c), 7, "cest")).transpose()?.flatten(),
-        cfop: input.cfop.map(|c| opt_digits(&Some(c), 4, "cfop")).transpose()?.flatten(),
+        cest: input
+            .cest
+            .map(|c| opt_digits(&Some(c), 7, "cest"))
+            .transpose()?
+            .flatten(),
+        cfop: input
+            .cfop
+            .map(|c| opt_digits(&Some(c), 4, "cfop"))
+            .transpose()?
+            .flatten(),
         icms_origin: input
             .icms_origin
             .map(|o| icms_origin(&Some(o)))
@@ -239,7 +260,10 @@ pub async fn update_product(
         if products.find_by_id(store_id, id).await?.is_none() {
             return Err(ProductError::NotFound);
         }
-        return products.update_details(store_id, id, patch).await.map_err(ProductError::Db);
+        return products
+            .update_details(store_id, id, patch)
+            .await
+            .map_err(ProductError::Db);
     };
 
     // Com preço: transação (leitura atual + update + log, tudo ou nada).
@@ -302,7 +326,9 @@ pub async fn deactivate_product(
     if repo.find_by_id(store_id, id).await?.is_none() {
         return Err(ProductError::NotFound);
     }
-    repo.deactivate(store_id, id).await.map_err(ProductError::Db)
+    repo.deactivate(store_id, id)
+        .await
+        .map_err(ProductError::Db)
 }
 
 #[cfg(test)]
@@ -317,7 +343,14 @@ mod tests {
     #[test]
     fn ncm_exige_8_digitos_numericos() {
         assert!(ncm("12345678").is_ok());
-        for invalido in ["", "1234567", "123456789", "1234567a", " 12 345678 ", "abcdefgh"] {
+        for invalido in [
+            "",
+            "1234567",
+            "123456789",
+            "1234567a",
+            " 12 345678 ",
+            "abcdefgh",
+        ] {
             assert!(ncm(invalido).is_err(), "{invalido}");
         }
     }
@@ -325,7 +358,12 @@ mod tests {
     #[test]
     fn barcode_aceita_gtin_valido() {
         assert!(barcode(&None).is_ok());
-        for valido in ["78912340", "789123456789", "7891234567890", "17891234567890"] {
+        for valido in [
+            "78912340",
+            "789123456789",
+            "7891234567890",
+            "17891234567890",
+        ] {
             assert!(barcode(&Some(valido.into())).is_ok(), "{valido}");
         }
         for invalido in ["123", "123456789012345", "7891234a", "7891 2340"] {

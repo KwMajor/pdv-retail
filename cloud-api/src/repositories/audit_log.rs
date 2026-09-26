@@ -25,11 +25,8 @@ pub trait AuditLogRepository {
         tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
         input: NewAuditLog,
     ) -> Result<AuditLog, sqlx::Error>;
-    async fn list_by_store(
-        &self,
-        store_id: Uuid,
-        limit: i64,
-    ) -> Result<Vec<AuditLog>, sqlx::Error>;
+    async fn list_by_store(&self, store_id: Uuid, limit: i64)
+    -> Result<Vec<AuditLog>, sqlx::Error>;
 }
 
 #[derive(Debug, Clone)]

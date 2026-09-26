@@ -123,9 +123,7 @@ async fn rollback_to(tx: &mut Tx<'_>, name: &str) {
 // --- factories --------------------------------------------------------------
 
 async fn mk_store(tx: &mut Tx<'_>, tag: &str) -> String {
-    sqlx::query_scalar(
-        "INSERT INTO store_settings(name, cnpj) VALUES ($1, $2) RETURNING id::text",
-    )
+    sqlx::query_scalar("INSERT INTO store_settings(name, cnpj) VALUES ($1, $2) RETURNING id::text")
         .bind(format!("Loja {tag}"))
         .bind(format!("cnpj-{tag}"))
         .fetch_one(&mut **tx)
@@ -403,13 +401,14 @@ async fn product_updated_at_atualiza_no_update() {
     // Pool próprio (fora de tx rollback): precisa de 2 transações p/ NOW() mudar.
     let pool = fresh_pool().await;
     let tag = uniq("ts");
-    let store: String =
-        sqlx::query_scalar("INSERT INTO store_settings(name, cnpj) VALUES ($1, $2) RETURNING id::text")
-            .bind(format!("Loja {tag}"))
-            .bind(format!("cnpj-{tag}"))
-            .fetch_one(&pool)
-            .await
-            .unwrap();
+    let store: String = sqlx::query_scalar(
+        "INSERT INTO store_settings(name, cnpj) VALUES ($1, $2) RETURNING id::text",
+    )
+    .bind(format!("Loja {tag}"))
+    .bind(format!("cnpj-{tag}"))
+    .fetch_one(&pool)
+    .await
+    .unwrap();
     let prod: String = sqlx::query_scalar(
         "INSERT INTO product(store_id, sku, name, price) VALUES ($1::uuid, $2, 'P', 1) RETURNING id::text",
     )
@@ -1122,7 +1121,10 @@ async fn task11_tabelas_principais_existem() {
         .fetch_one(&mut *tx)
         .await
         .unwrap();
-        assert_eq!(n, 1, "tabela principal {table} não existe (001_initial_schema.sql)");
+        assert_eq!(
+            n, 1,
+            "tabela principal {table} não existe (001_initial_schema.sql)"
+        );
     }
     tx.rollback().await.unwrap();
 }
@@ -1177,7 +1179,10 @@ async fn task11_soft_delete_product_e_user() {
         .fetch_one(&mut *tx)
         .await
         .unwrap_or_else(|_| panic!("tabela {table} sem coluna is_active"));
-        assert_eq!(row.0, "boolean", "tabela {table}: is_active deve ser BOOLEAN");
+        assert_eq!(
+            row.0, "boolean",
+            "tabela {table}: is_active deve ser BOOLEAN"
+        );
         assert!(
             row.1.contains("true"),
             "tabela {table}: is_active deve ter DEFAULT TRUE, obteve: {}",
@@ -1255,24 +1260,21 @@ async fn stock_saldo_exige_store_id_e_unico_por_produto() {
     let prod = mk_product(&mut tx, &store, &uniq("stk")).await;
     // Sem store_id: falha (NOT NULL).
     let sp = savepoint(&mut tx).await;
-    let err = sqlx::query(
-        "INSERT INTO stock(store_id, product_id, quantity) VALUES (NULL, $1::uuid, 5)",
-    )
-    .bind(&prod)
-    .execute(&mut *tx)
-    .await
-    .unwrap_err();
+    let err =
+        sqlx::query("INSERT INTO stock(store_id, product_id, quantity) VALUES (NULL, $1::uuid, 5)")
+            .bind(&prod)
+            .execute(&mut *tx)
+            .await
+            .unwrap_err();
     assert!(err.to_string().contains("null"));
     rollback_to(&mut tx, &sp).await;
     // Inserção ok.
-    sqlx::query(
-        "INSERT INTO stock(store_id, product_id, quantity) VALUES ($1::uuid, $2::uuid, 5)",
-    )
-    .bind(&store)
-    .bind(&prod)
-    .execute(&mut *tx)
-    .await
-    .unwrap();
+    sqlx::query("INSERT INTO stock(store_id, product_id, quantity) VALUES ($1::uuid, $2::uuid, 5)")
+        .bind(&store)
+        .bind(&prod)
+        .execute(&mut *tx)
+        .await
+        .unwrap();
     // Duplicata (mesma loja + produto): falha (UNIQUE).
     let sp = savepoint(&mut tx).await;
     let err = sqlx::query(

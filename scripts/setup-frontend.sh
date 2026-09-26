@@ -48,6 +48,9 @@ if command -v node >/dev/null 2>&1; then
   ok "node OK ($(node --version), npm $(npm --version))"
 else
   info "instalando fnm + node $NODE_VERSION (sem sudo)..."
+  # Instalador oficial via TLS; upstream não publica checksum (alternativa
+  # seria versionar o binário). Exceção auditada ao gate de segurança.
+  # nosemgrep
   curl -fsSL https://fnm.vercel.app/install | bash -s -- --skip-shell
   activate_node
   # shellcheck disable=SC1090

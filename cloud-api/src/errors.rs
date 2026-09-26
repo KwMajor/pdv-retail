@@ -49,11 +49,9 @@ impl IntoResponse for AppError {
             AppError::NotFound => (StatusCode::NOT_FOUND, "NOT_FOUND", self.to_string()),
             AppError::BadRequest(m) => (StatusCode::BAD_REQUEST, "BAD_REQUEST", m.clone()),
             AppError::Conflict(m) => (StatusCode::CONFLICT, "CONFLICT", m.clone()),
-            AppError::Unprocessable(m) => (
-                StatusCode::UNPROCESSABLE_ENTITY,
-                "UNPROCESSABLE",
-                m.clone(),
-            ),
+            AppError::Unprocessable(m) => {
+                (StatusCode::UNPROCESSABLE_ENTITY, "UNPROCESSABLE", m.clone())
+            }
             // Detalhe interno vai só pro log, nunca pro cliente.
             AppError::Internal(_) => (
                 StatusCode::INTERNAL_SERVER_ERROR,
@@ -64,7 +62,14 @@ impl IntoResponse for AppError {
         if matches!(self, AppError::Db(_) | AppError::Internal(_)) {
             tracing::error!(?self, "app error");
         }
-        (status, Json(ErrorBody { code: code.to_string(), message })).into_response()
+        (
+            status,
+            Json(ErrorBody {
+                code: code.to_string(),
+                message,
+            }),
+        )
+            .into_response()
     }
 }
 

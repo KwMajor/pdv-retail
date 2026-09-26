@@ -125,7 +125,9 @@ async fn manager_login(p: &sqlx::PgPool, store: &str) -> (String, String) {
                 .uri("/api/v1/auth/login")
                 .header("X-Store-ID", store)
                 .header("Content-Type", "application/json")
-                .body(Body::from(json!({"email": email, "password": "segredo-123"}).to_string()))
+                .body(Body::from(
+                    json!({"email": email, "password": "segredo-123"}).to_string(),
+                ))
                 .unwrap(),
         )
         .await
@@ -191,11 +193,25 @@ async fn preco_alterado_grava_audit_com_ator_e_divergencia() {
     let store = mk_store(&p, &uniq("h32")).await;
     let (gerente, gerente_id) = manager_login(&p, &store).await;
 
-    let (s, j) = call(&p, &gerente, "POST", "/api/v1/products", Some(produto(&uniq("H32"), 10.00))).await;
+    let (s, j) = call(
+        &p,
+        &gerente,
+        "POST",
+        "/api/v1/products",
+        Some(produto(&uniq("H32"), 10.00)),
+    )
+    .await;
     assert_eq!(s, StatusCode::CREATED, "{j}");
     let id = j["id"].as_str().unwrap().to_string();
 
-    let (s, j) = call(&p, &gerente, "PUT", &format!("/api/v1/products/{id}"), Some(json!({"price": 15.00}))).await;
+    let (s, j) = call(
+        &p,
+        &gerente,
+        "PUT",
+        &format!("/api/v1/products/{id}"),
+        Some(json!({"price": 15.00})),
+    )
+    .await;
     assert_eq!(s, StatusCode::OK, "{j}");
     // Dinheiro compara numericamente: escala ("15" vs "15.00") não é canônica.
     let preco: Decimal = j["price"].as_str().unwrap().parse().unwrap();
@@ -209,15 +225,17 @@ async fn preco_alterado_grava_audit_com_ator_e_divergencia() {
     assert_eq!(entity_id, &id);
     let velho: Decimal = old["price"].as_str().unwrap().parse().unwrap();
     let novo: Decimal = new["price"].as_str().unwrap().parse().unwrap();
-    assert_eq!((velho, novo), (Decimal::new(1000, 2), Decimal::new(1500, 2)));
+    assert_eq!(
+        (velho, novo),
+        (Decimal::new(1000, 2), Decimal::new(1500, 2))
+    );
     // Ator = gerente do JWT (QA confere no banco).
-    let ator: Option<String> = sqlx::query_scalar(
-        "SELECT actor_user_id::text FROM audit_log WHERE store_id = $1::uuid",
-    )
-    .bind(&store)
-    .fetch_one(&p)
-    .await
-    .unwrap();
+    let ator: Option<String> =
+        sqlx::query_scalar("SELECT actor_user_id::text FROM audit_log WHERE store_id = $1::uuid")
+            .bind(&store)
+            .fetch_one(&p)
+            .await
+            .unwrap();
     assert_eq!(ator.as_deref(), Some(gerente_id.as_str()));
 }
 
@@ -227,7 +245,14 @@ async fn preco_igual_nao_gera_auditoria() {
     let store = mk_store(&p, &uniq("n32")).await;
     let (gerente, _) = manager_login(&p, &store).await;
 
-    let (s, j) = call(&p, &gerente, "POST", "/api/v1/products", Some(produto(&uniq("N32"), 10.00))).await;
+    let (s, j) = call(
+        &p,
+        &gerente,
+        "POST",
+        "/api/v1/products",
+        Some(produto(&uniq("N32"), 10.00)),
+    )
+    .await;
     assert_eq!(s, StatusCode::CREATED);
     let id = j["id"].as_str().unwrap().to_string();
 
@@ -252,7 +277,14 @@ async fn falha_no_log_desfaz_o_update() {
     let store = mk_store(&p, &uniq("r32")).await;
     let (gerente, _) = manager_login(&p, &store).await;
 
-    let (s, j) = call(&p, &gerente, "POST", "/api/v1/products", Some(produto(&uniq("R32"), 10.00))).await;
+    let (s, j) = call(
+        &p,
+        &gerente,
+        "POST",
+        "/api/v1/products",
+        Some(produto(&uniq("R32"), 10.00)),
+    )
+    .await;
     assert_eq!(s, StatusCode::CREATED);
     let id: Uuid = j["id"].as_str().unwrap().parse().unwrap();
     let store_id: Uuid = store.parse().unwrap();
@@ -265,7 +297,10 @@ async fn falha_no_log_desfaz_o_update() {
             &mut tx,
             store_id,
             id,
-            ProductPatch { price: Some("15.00".parse().unwrap()), ..Default::default() },
+            ProductPatch {
+                price: Some("15.00".parse().unwrap()),
+                ..Default::default()
+            },
         )
         .await
         .unwrap();

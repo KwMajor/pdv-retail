@@ -18,16 +18,8 @@ pub struct NewCustomer {
 
 pub trait CustomerRepository {
     async fn create(&self, input: NewCustomer) -> Result<Customer, sqlx::Error>;
-    async fn find_by_id(
-        &self,
-        store_id: Uuid,
-        id: Uuid,
-    ) -> Result<Option<Customer>, sqlx::Error>;
-    async fn list(
-        &self,
-        store_id: Uuid,
-        limit: i64,
-    ) -> Result<Vec<Customer>, sqlx::Error>;
+    async fn find_by_id(&self, store_id: Uuid, id: Uuid) -> Result<Option<Customer>, sqlx::Error>;
+    async fn list(&self, store_id: Uuid, limit: i64) -> Result<Vec<Customer>, sqlx::Error>;
     /// Soft delete (`is_active = FALSE`).
     async fn deactivate(&self, store_id: Uuid, id: Uuid) -> Result<Customer, sqlx::Error>;
 }
@@ -62,11 +54,7 @@ impl CustomerRepository for PgCustomerRepository {
         .await
     }
 
-    async fn find_by_id(
-        &self,
-        store_id: Uuid,
-        id: Uuid,
-    ) -> Result<Option<Customer>, sqlx::Error> {
+    async fn find_by_id(&self, store_id: Uuid, id: Uuid) -> Result<Option<Customer>, sqlx::Error> {
         sqlx::query_as!(
             Customer,
             "SELECT id, store_id, name, cpf_cnpj, corporate_name, state_registration, phone, email, is_active, created_at, updated_at
@@ -78,11 +66,7 @@ impl CustomerRepository for PgCustomerRepository {
         .await
     }
 
-    async fn list(
-        &self,
-        store_id: Uuid,
-        limit: i64,
-    ) -> Result<Vec<Customer>, sqlx::Error> {
+    async fn list(&self, store_id: Uuid, limit: i64) -> Result<Vec<Customer>, sqlx::Error> {
         sqlx::query_as!(
             Customer,
             "SELECT id, store_id, name, cpf_cnpj, corporate_name, state_registration, phone, email, is_active, created_at, updated_at

@@ -1,0 +1,49 @@
+# cargo-deny: supply chain do backend (SaaS closed-source).
+# Falha o CI em: licença viral, advisory RUSTSEC, fonte fora do crates.io.
+[graph]
+targets = ["x86_64-unknown-linux-gnu"]
+
+[advisories]
+db-urls = ["https://github.com/rustsec/advisory-db"]
+unmaintained = "all"
+unsound = "all"
+yanked = "deny"
+ignore = [
+  # proc-macro-error: unmaintained, mas só roda em build-time (via utoipa 4,
+  # preso ao axum 0.7) e sem upgrade seguro (RUSTSEC diz "no safe upgrade").
+  # Risco prático baixo; reavaliar ao subir para axum 0.8.
+  { id = "RUSTSEC-2024-0370", reason = "build-time only, sem upgrade seguro no axum 0.7" },
+]
+
+[licenses]
+# Só permissivas (AGENTS.md §1). Com `allow` presente, não-listadas = deny.
+# Copyleft (GPL/AGPL/LGPL) jamais entra na lista.
+allow = [
+  "MIT",
+  "Apache-2.0",
+  "BSD-2-Clause",
+  "BSD-3-Clause",
+  "ISC",
+  "Unicode-3.0",
+  "Unlicense",
+  "Zlib",
+  # CDLA-Permissive-2.0: lista de certificados raiz (webpki-roots, via sqlx
+  # TLS). Permissiva, sem copyleft — aceitável em SaaS fechado; sem ela, sem TLS.
+  "CDLA-Permissive-2.0",
+]
+exceptions = []
+
+# Nosso próprio crate é closed-source: não exigir licença open nele.
+[licenses.private]
+ignore = true
+
+[bans]
+multiple-versions = "allow"
+wildcards = "deny"
+highlight = "all"
+
+[sources]
+unknown-registry = "deny"
+unknown-git = "deny"
+allow-registry = ["https://github.com/rust-lang/crates.io-index"]
+allow-git = []

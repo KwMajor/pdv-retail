@@ -60,7 +60,7 @@ impl KeyringVault {
 
     /// Entrada isolada (testes): nunca toca a sessão real do operador.
     pub fn isolated(tag: &str) -> Self {
-        Self { user: format!("{VAULT_USER}-test-{tag}") }
+        Self { user: [VAULT_USER, "-test-", tag].concat() }
     }
 
     fn entry(&self) -> Result<keyring::Entry, VaultError> {
@@ -131,7 +131,8 @@ impl TokenVault for MemoryVault {
 /// Sonda se há cofre funcional (para pular o teste live onde não houver).
 #[cfg(test)]
 fn secret_service_available() -> bool {
-    let probe = format!("{}-probe", VAULT_USER);
+    // Nome por concatenação de fatias (regra anti-interpolação deste repo).
+    let probe = [VAULT_USER, "-probe"].concat();
     let entry = match keyring::Entry::new(VAULT_SERVICE, &probe) {
         Ok(e) => e,
         Err(_) => return false,

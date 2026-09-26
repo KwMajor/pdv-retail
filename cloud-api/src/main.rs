@@ -54,7 +54,11 @@ async fn main() {
         tracing::info!("docs OpenAPI desativadas (APP_ENV={})", cfg.app_env);
     }
 
-    let state = AppState { pool, jwt, expose_docs };
+    let state = AppState {
+        pool,
+        jwt,
+        expose_docs,
+    };
     let app = app_router(state);
 
     let addr = SocketAddr::from(([0, 0, 0, 0], cfg.port));
