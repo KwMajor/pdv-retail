@@ -1,0 +1,7 @@
+# Toolchain pinado: local, CI e futuros devs usam EXATAMENTE este.
+# Motivo: fmt/clippy mudam entre versões — sem pin, o CI quebra sem que
+# nenhum código tenha mudado. Atualizar é decisão consciente (testar antes).
+[toolchain]
+channel = "1.98.1"
+components = ["clippy", "rustfmt"]
+profile = "minimal"
