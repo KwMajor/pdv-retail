@@ -71,5 +71,6 @@ pub fn app_router(state: AppState) -> Router {
     } else {
         app
     };
-    app.with_state(state)
+    // CORS por último: envolve todas as rotas (incluindo o preflight OPTIONS).
+    app.layer(crate::middleware::cors_layer()).with_state(state)
 }
