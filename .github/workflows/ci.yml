@@ -152,9 +152,12 @@ jobs:
         with:
           persist-credentials: false
       - name: scan
+        # Packs explícitos (não `auto`): `auto` exige telemetria ligada,
+        # incompatível com SEMGREP_SEND_METRICS=off. Cobertura equivalente
+        # para nossa stack, mais `--config .semgrep/rules` (regras próprias).
         run: |
           pip install --quiet semgrep
-          semgrep scan --config auto --config .semgrep/rules --sarif --output semgrep.sarif
+          semgrep scan --config p/rust --config p/typescript --config p/javascript --config p/secrets --config p/supply-chain --config p/dockerfile --config p/github-actions --config .semgrep/rules --sarif --output semgrep.sarif
       # Best-effort: o GATE é o exit code do scan acima; o upload é só
       # visibilidade (falha em repos sem code scanning habilitado).
       - uses: github/codeql-action/upload-sarif@7999b86c43a865dc79d8923397f35af22de63401 # v4
