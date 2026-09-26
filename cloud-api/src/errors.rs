@@ -28,6 +28,10 @@ pub enum AppError {
     BadRequest(String),
     #[error("{0}")]
     Conflict(String),
+    /// Falha de validação de domínio (ex: NCM fora do formato). 422, não 400:
+    /// a sintaxe está certa, o conteúdo é semanticamente inválido.
+    #[error("{0}")]
+    Unprocessable(String),
     #[error("erro interno")]
     Internal(String),
 }
@@ -45,6 +49,11 @@ impl IntoResponse for AppError {
             AppError::NotFound => (StatusCode::NOT_FOUND, "NOT_FOUND", self.to_string()),
             AppError::BadRequest(m) => (StatusCode::BAD_REQUEST, "BAD_REQUEST", m.clone()),
             AppError::Conflict(m) => (StatusCode::CONFLICT, "CONFLICT", m.clone()),
+            AppError::Unprocessable(m) => (
+                StatusCode::UNPROCESSABLE_ENTITY,
+                "UNPROCESSABLE",
+                m.clone(),
+            ),
             // Detalhe interno vai só pro log, nunca pro cliente.
             AppError::Internal(_) => (
                 StatusCode::INTERNAL_SERVER_ERROR,
@@ -107,6 +116,15 @@ mod tests {
         assert_eq!(status, StatusCode::CONFLICT);
         assert_eq!(json["code"], "CONFLICT");
         assert_eq!(json["message"], "email já cadastrado nesta loja");
+    }
+
+    #[tokio::test]
+    async fn unprocessable_maps_422_with_message() {
+        let (status, json) =
+            status_and_json(AppError::Unprocessable("ncm deve ter 8 dígitos".into())).await;
+        assert_eq!(status, StatusCode::UNPROCESSABLE_ENTITY);
+        assert_eq!(json["code"], "UNPROCESSABLE");
+        assert_eq!(json["message"], "ncm deve ter 8 dígitos");
     }
 
     #[tokio::test]

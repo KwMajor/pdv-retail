@@ -9,7 +9,7 @@
 use utoipa::{Modify, OpenApi};
 use utoipa::openapi::security::{HttpAuthScheme, HttpBuilder, SecurityScheme};
 
-use crate::controllers::{auth, health, ping, users};
+use crate::controllers::{auth, health, ping, products, users};
 use crate::errors::ErrorBody;
 use crate::models::UserRole;
 
@@ -21,11 +21,13 @@ pub mod routes {
     pub const USERS: &str = "/api/v1/users";
     pub const ME: &str = "/api/v1/me";
     pub const LOGIN: &str = "/api/v1/auth/login";
+    pub const PRODUCTS: &str = "/api/v1/products";
+    pub const PRODUCT_BY_ID: &str = "/api/v1/products/{id}";
     pub const OPENAPI_JSON: &str = "/api-docs/openapi.json";
     pub const DOCS_UI: &str = "/docs";
 
     /// Toda rota de negócio precisa estar no spec (anti-drift).
-    pub const DOCUMENTED: &[&str] = &[HEALTH, READY, PING, USERS, ME, LOGIN];
+    pub const DOCUMENTED: &[&str] = &[HEALTH, READY, PING, USERS, ME, LOGIN, PRODUCTS, PRODUCT_BY_ID];
 }
 
 /// `Authorization: Bearer <JWT>` como esquema nomeado `bearer`.
@@ -57,6 +59,11 @@ impl Modify for SecurityAddon {
         users::create_user_handler,
         users::me_handler,
         auth::login_handler,
+        products::create_product_handler,
+        products::list_products_handler,
+        products::get_product_handler,
+        products::update_product_handler,
+        products::delete_product_handler,
     ),
     components(
         schemas(
@@ -67,6 +74,10 @@ impl Modify for SecurityAddon {
             users::UserResponse,
             auth::LoginRequest,
             auth::LoginResponse,
+            products::CreateProductRequest,
+            products::UpdateProductRequest,
+            products::ListProductsQuery,
+            products::ProductResponse,
             UserRole,
             ErrorBody,
         )
@@ -77,6 +88,7 @@ impl Modify for SecurityAddon {
         (name = "isolamento", description = "Prova de tenant autenticado"),
         (name = "usuarios", description = "Gestão de funcionários (gestão)"),
         (name = "auth", description = "Emissão de JWT"),
+        (name = "produtos", description = "Catálogo e parâmetros fiscais"),
     ),
 )]
 pub struct ApiDoc;

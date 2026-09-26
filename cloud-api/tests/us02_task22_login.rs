@@ -213,6 +213,26 @@ async fn credencial_errada_inativo_e_inexistente_retornam_mesmo_401() {
 }
 
 #[tokio::test]
+async fn senha_gigante_cai_no_401_generico_sem_argon2() {
+    // Acima do teto do cadastro: nunca é credencial válida; mesmo corpo 401.
+    let p = pool().await;
+    let store = mk_store(&p, &uniq("lg")).await;
+    let email = mk_user(&p, &store, UserRole::Cashier, "segredo-123").await;
+    let gigante = "y".repeat(5000);
+    let (s1, j1) = corpo(
+        app_with_db(p.clone()).oneshot(post_login(Some(&store), &email, &gigante)).await.unwrap(),
+    )
+    .await;
+    let (s2, j2) = corpo(
+        app_with_db(p.clone()).oneshot(post_login(Some(&store), &email, "errada")).await.unwrap(),
+    )
+    .await;
+    assert_eq!(s1, StatusCode::UNAUTHORIZED);
+    assert_eq!(s2, StatusCode::UNAUTHORIZED);
+    assert_eq!(j1.to_string(), j2.to_string());
+}
+
+#[tokio::test]
 async fn login_sem_dica_de_loja_retorna_400() {
     let p = pool().await;
     let (status, json) = corpo(
