@@ -8,7 +8,7 @@
 
 use axum::body::{Body, to_bytes};
 use axum::http::{Request, StatusCode};
-use pdv_cloud_api::{AppState, app_router, auth::JwtKeys, docs::routes};
+use pdv_cloud_api::{AppState, app_router, jwt::JwtKeys, openapi::routes};
 use tower::ServiceExt;
 
 /// Segredo só dos testes (nunca em prod).

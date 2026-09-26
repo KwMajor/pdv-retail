@@ -115,7 +115,7 @@ mod tests {
     use axum::http::{Request, StatusCode};
     use axum::response::IntoResponse;
 
-    use crate::auth::JwtKeys;
+    use crate::jwt::JwtKeys;
 
     /// Segredo só dos testes (nunca em prod).
     fn keys() -> JwtKeys {
@@ -217,7 +217,7 @@ mod tests {
         // Assinatura válida, mas `role` fora da lista: o extractor barra.
         use jsonwebtoken::{Algorithm, EncodingKey, Header, encode};
         let now = chrono::Utc::now().timestamp();
-        let claims = crate::auth::Claims {
+        let claims = crate::jwt::Claims {
             sub: Uuid::new_v4(),
             store_id: Uuid::new_v4(),
             role: "dono".to_string(),

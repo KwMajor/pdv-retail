@@ -8,13 +8,13 @@
 // 11 traits sem ganho. Supressão consciente e documentada.
 #![allow(async_fn_in_trait)]
 
-pub mod auth;
 pub mod config;
 pub mod controllers;
-pub mod docs;
+pub mod jwt;
 pub mod errors;
 pub mod middleware;
 pub mod models;
+pub mod openapi;
 pub mod repositories;
 pub mod services;
 
@@ -26,8 +26,8 @@ use sqlx::PgPool;
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
 
-use crate::auth::JwtKeys;
-use crate::docs::routes;
+use crate::jwt::JwtKeys;
+use crate::openapi::routes;
 
 /// Estado compartilhado (pool opcional: `/health` responde sem banco).
 #[derive(Clone)]
@@ -66,7 +66,7 @@ pub fn app_router(state: AppState) -> Router {
     let app = if state.expose_docs {
         app.merge(
             SwaggerUi::new(routes::DOCS_UI)
-                .url(routes::OPENAPI_JSON, crate::docs::ApiDoc::openapi()),
+                .url(routes::OPENAPI_JSON, crate::openapi::ApiDoc::openapi()),
         )
     } else {
         app

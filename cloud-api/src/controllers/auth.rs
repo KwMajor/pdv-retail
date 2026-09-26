@@ -66,7 +66,7 @@ pub async fn login_handler(
     Ok(Json(LoginResponse {
         token: out.token,
         token_type: "Bearer".to_string(),
-        expires_in: crate::auth::TOKEN_TTL_SECS,
+        expires_in: crate::jwt::TOKEN_TTL_SECS,
         user: UserResponse::from(out.user),
     }))
 }

@@ -11,7 +11,7 @@ use axum::body::{Body, to_bytes};
 use axum::http::{Request, StatusCode};
 use pdv_cloud_api::{
     AppState, app_router,
-    auth::{JwtKeys, TOKEN_TTL_SECS},
+    jwt::{JwtKeys, TOKEN_TTL_SECS},
     models::UserRole,
     repositories::PgUserRepository,
     services::{CreateUserInput, create_user},

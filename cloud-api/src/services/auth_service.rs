@@ -7,7 +7,7 @@
 use std::sync::OnceLock;
 use uuid::Uuid;
 
-use crate::auth::JwtKeys;
+use crate::jwt::JwtKeys;
 use crate::models::User;
 use crate::repositories::{PgUserRepository, UserRepository};
 use argon2::password_hash::{PasswordHash, PasswordVerifier};

@@ -5,7 +5,7 @@ use serde_json::json;
 use sqlx::postgres::PgPoolOptions;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
-use pdv_cloud_api::{AppState, app_router, auth::JwtKeys, config};
+use pdv_cloud_api::{AppState, app_router, config, jwt::JwtKeys};
 
 use config::Config;
 

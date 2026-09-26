@@ -9,7 +9,7 @@
 
 use axum::body::{Body, to_bytes};
 use axum::http::{Request, StatusCode};
-use pdv_cloud_api::{AppState, app_router, auth::JwtKeys, models::UserRole};
+use pdv_cloud_api::{AppState, app_router,     jwt::JwtKeys, models::UserRole};
 use tower::ServiceExt;
 use uuid::Uuid;
 
@@ -101,7 +101,7 @@ async fn ping_com_token_adulterado_rejeita_401() {
 async fn ping_com_papel_desconhecido_rejeita_401() {
     // Assinatura válida, mas `role` fora da lista: o extractor barra.
     use jsonwebtoken::{Algorithm, EncodingKey, Header, encode};
-    use pdv_cloud_api::auth::Claims;
+    use pdv_cloud_api::jwt::Claims;
     let now = chrono::Utc::now().timestamp();
     let token = encode(
         &Header::new(Algorithm::HS256),
