@@ -94,8 +94,9 @@ jobs:
           manifest-path: cloud-api/Cargo.toml
           log-level: warn
           command: check
-      - uses: actions/dependency-review-action@2031cfc080254a8a887f58cffee85186f0e49e48 # v4
-        if: github.event_name == 'pull_request'
+      # dependency-review-action REMOVIDO de propósito: exige GitHub Advanced
+      # Security (pago em repo privado). Sinal equivalente já coberto por
+      # cargo-deny (advisories Rust) + npm audit (JS). Reavaliar se GHAS entrar.
 
   frontend:
     name: frontend tsc + build + audit
