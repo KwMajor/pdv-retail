@@ -101,6 +101,7 @@ Para otimizar nosso tempo e os tokens de contexto:
 *   **NUNCA reutilizar branch já mergeada:** continuar commitando nela após o merge recria divergência (foi o que quebrou o MR da `fix/us01-unit-cost` com conflito `add/add`). Follow-ups de US já mergeada vão em `fix/us-XX-assunto` (a partir da `dev` atual).
 *   **Limpeza:** após merge confirmado na `dev` (conferir com `git merge-base --is-ancestor`), apagar a branch local e remota (`git push origin --delete <branch>` + `git branch -d`). Nunca apagar branch com trabalho exclusivo não mergeado sem confirmação explícita do usuário.
 *   **Segurança no stage:** antes de commitar, conferir `git status`/`git diff` e nunca incluir segredos (`.env`, `*.pfx`, `*.pem`, `*.key`). Sem `force-push` sem pedido explícito.
+*   **Portão local antes do push:** `./scripts/check-all.sh` VERDE é obrigatório antes de todo `git push` (espelha o CI: fmt, clippy, testes+prepare, deny, semgrep, tsc/eslint/build/audit). O hook `.githooks/pre-push` executa sozinho após `git config core.hooksPath .githooks` (uma vez por clone); bypass só com `--no-verify` em emergência, com motivo no PR.
 
 ---
 

@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+# Hook pre-push: barra o push se o portão local estiver vermelho.
+# Ativação (uma vez por clone): git config core.hooksPath .githooks
+# Bypass consciente (emergência): git push --no-verify (registre o motivo no PR).
+set -euo pipefail
+
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+exec "$ROOT/scripts/check-all.sh"
