@@ -9,6 +9,8 @@ publish = false
 [dependencies]
 # Web (todas MIT/Apache-2.0)
 axum = "0.7"
+# CORS para o web dev (navegador exige preflight em cross-origin)
+tower-http = { version = "0.5", features = ["cors"] }
 # Macro exigida para impls de FromRequestParts (o trait do axum-core é async_trait)
 async-trait = "0.1"
 tokio = { version = "1", features = ["macros", "rt-multi-thread", "signal"] }

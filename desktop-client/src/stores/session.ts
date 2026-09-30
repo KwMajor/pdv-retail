@@ -9,9 +9,9 @@
  * - `logout()`: limpa memória E cofre.
  */
 
-import { invoke } from "@tauri-apps/api/core";
 import { create } from "zustand";
 import { api, setApiToken } from "../lib/api";
+import { vaultClear, vaultLoad, vaultSave } from "../lib/tauri";
 
 export interface SessionUser {
   id: string;
@@ -47,31 +47,37 @@ export const useSession = create<SessionState>()((set) => ({
       body: JSON.stringify({ email, password }),
     });
     // Imediatamente ao cofre do SO via IPC (DoD) — e só à memória local.
-    await invoke("save_session_token", { token: res.token });
+    // Fora do Tauri (web dev) o cofre é no-op: sessão vive só em memória.
+    await vaultSave(res.token);
     setApiToken(res.token);
     set({ user: res.user, ready: true });
   },
 
   restore: async () => {
     // Abertura do app: token silencioso do cofre → memória (Happy Path DoD).
-    const token = await invoke<string | null>("load_session_token");
-    if (token) {
-      setApiToken(token);
-      // A identidade é revalidada contra a API (o JWT pode ter expirado).
-      try {
-        const me = await api<SessionUser>("/api/v1/me");
-        set({ user: me, ready: true });
-        return;
-      } catch {
-        await invoke("clear_session_token");
-        setApiToken(null);
+    // Bloco à prova de web: qualquer falha cai para "sem sessão", nunca trava.
+    try {
+      const token = await vaultLoad();
+      if (token) {
+        setApiToken(token);
+        // A identidade é revalidada contra a API (o JWT pode ter expirado).
+        try {
+          const me = await api<SessionUser>("/api/v1/me");
+          set({ user: me, ready: true });
+          return;
+        } catch {
+          await vaultClear();
+          setApiToken(null);
+        }
       }
+    } catch {
+      setApiToken(null);
     }
     set({ user: null, ready: true });
   },
 
   logout: async () => {
-    await invoke("clear_session_token");
+    await vaultClear();
     setApiToken(null);
     set({ user: null });
   },
