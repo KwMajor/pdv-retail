@@ -42,13 +42,12 @@ async fn main() {
 
     // Loja demo (reaproveita se já existir).
     let stores = PgStoreSettingsRepository::new(pool.clone());
-    let existing: Option<String> = sqlx::query_scalar(
-        "SELECT id::text FROM store_settings WHERE cnpj = $1",
-    )
-    .bind(DEMO_CNPJ)
-    .fetch_optional(&pool)
-    .await
-    .expect("select loja");
+    let existing: Option<String> =
+        sqlx::query_scalar("SELECT id::text FROM store_settings WHERE cnpj = $1")
+            .bind(DEMO_CNPJ)
+            .fetch_optional(&pool)
+            .await
+            .expect("select loja");
     let store_id: uuid::Uuid = match existing {
         Some(id) => {
             println!("loja demo já existe: {id}");
@@ -56,7 +55,10 @@ async fn main() {
         }
         None => {
             let store = stores
-                .create(NewStoreSettings { name: "Loja Demo".into(), cnpj: DEMO_CNPJ.into() })
+                .create(NewStoreSettings {
+                    name: "Loja Demo".into(),
+                    cnpj: DEMO_CNPJ.into(),
+                })
                 .await
                 .expect("criar loja");
             println!("loja demo criada: {}", store.id);
@@ -95,10 +97,38 @@ async fn main() {
     // Catálogo de exemplo (SKU fixa; ignora duplicado).
     let products = pdv_cloud_api::repositories::PgProductRepository::new(pool.clone());
     let catalogo = [
-        ("Arroz T1 5kg", "ARROZ-T1-5KG", "7891234567890", 2799, 2150, "10063021"),
-        ("Feijão Carioca 1kg", "FEIJAO-1KG", "7891234567891", 899, 620, "07133319"),
-        ("Leite UHT 1L", "LEITE-UHT-1L", "7891234567892", 599, 430, "04012010"),
-        ("Café Torrado 500g", "CAFE-500G", "7891234567893", 1899, 1340, "09012100"),
+        (
+            "Arroz T1 5kg",
+            "ARROZ-T1-5KG",
+            "7891234567890",
+            2799,
+            2150,
+            "10063021",
+        ),
+        (
+            "Feijão Carioca 1kg",
+            "FEIJAO-1KG",
+            "7891234567891",
+            899,
+            620,
+            "07133319",
+        ),
+        (
+            "Leite UHT 1L",
+            "LEITE-UHT-1L",
+            "7891234567892",
+            599,
+            430,
+            "04012010",
+        ),
+        (
+            "Café Torrado 500g",
+            "CAFE-500G",
+            "7891234567893",
+            1899,
+            1340,
+            "09012100",
+        ),
     ];
     for (name, sku, barcode, price, cost, ncm) in catalogo {
         let r = create_product(

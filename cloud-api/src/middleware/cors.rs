@@ -24,10 +24,7 @@ fn allowed_origins() -> Vec<HeaderValue> {
         .filter_map(|s| s.parse().ok())
         .collect();
     if from_env.is_empty() {
-        DEV_ORIGINS
-            .iter()
-            .filter_map(|s| s.parse().ok())
-            .collect()
+        DEV_ORIGINS.iter().filter_map(|s| s.parse().ok()).collect()
     } else {
         from_env
     }

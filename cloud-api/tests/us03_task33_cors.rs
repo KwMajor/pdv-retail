@@ -14,7 +14,11 @@ fn keys() -> JwtKeys {
 }
 
 fn app() -> axum::Router {
-    app_router(AppState { pool: None, jwt: keys(), expose_docs: false })
+    app_router(AppState {
+        pool: None,
+        jwt: keys(),
+        expose_docs: false,
+    })
 }
 
 async fn preflight(origin: &str) -> axum::response::Response {
