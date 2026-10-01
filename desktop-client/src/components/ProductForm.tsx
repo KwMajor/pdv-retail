@@ -116,7 +116,7 @@ export function ProductForm({ onCreated }: { onCreated: () => void }) {
     errors[k] ? <span role="alert">{errors[k]}</span> : null;
 
   return (
-    <section aria-label="Cadastro de produto">
+    <section aria-label="Cadastro de produto" className="card">
       <div role="tablist">
         <button role="tab" aria-selected={tab === "geral"} onClick={() => setTab("geral")}>
           Dados Gerais
@@ -225,6 +225,7 @@ export function ProductForm({ onCreated }: { onCreated: () => void }) {
 
       {serverError && <p role="alert">{serverError}</p>}
       <button
+        className="primary"
         disabled={
           saving ||
           !isValidNcm(onlyDigits(draft.ncm)) ||

@@ -34,7 +34,7 @@ export function LoginForm() {
   }
 
   return (
-    <section aria-label="Login do operador">
+    <section aria-label="Login do operador" className="card">
       <h1>PDV Retail — Entrar</h1>
       <label>
         ID da loja (UUID)
@@ -66,7 +66,7 @@ export function LoginForm() {
         />
       </label>
       {error && <p role="alert">{error}</p>}
-      <button disabled={busy} onClick={() => void submit()}>
+      <button disabled={busy} className="primary" onClick={() => void submit()}>
         {busy ? "Entrando…" : "Entrar"}
       </button>
     </section>
