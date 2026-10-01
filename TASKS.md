@@ -129,7 +129,7 @@ O cadastro de produtos é o coração da operação. A SEFAZ exige rigor absolut
 **Critérios de Aceite (DoD):**
 *   [ ] Formulário dividido em abas ou seções: "Dados Gerais" (Nome, EAN, Preços) e "Fiscal" (NCM, CEST, CFOP Padrão, Origem).
 *   [ ] Máscaras de input aplicadas para código de barras (GTIN/EAN) e formatação monetária padrão BRL.
-*   [ ] DoD Validação (frontend): máscara bloqueia o caractere inválido E exibe erro explicativo (padrão para os formulários seguintes); mesmas regras da Task 3.1 revalidadas pelo backend, que é a autoridade.
+*   [ ] DoD Validação (frontend): máscara bloqueia o caractere inválido E exibe erro explicativo (padrão para os formulários seguintes); mesmas regras da Task 3.1 revalidadas pelo backend, que é a autoridade. Testes vitest obrigatórios (validadores puros + erro/submit do componente).
 *   [ ] Integração com a Cloud API enviando o token JWT no cabeçalho.
 
 ---
@@ -231,7 +231,7 @@ Clientes frequentemente dividem o pagamento (ex: metade no cartão, metade em di
 *   [ ] O modal deve exibir o "Valor Total", "Valor Pago até agora" e "Falta Pagar".
 *   [ ] Botões rápidos para métodos de pagamento (Dinheiro, PIX, Crédito, Débito).
 *   [ ] O botão "Finalizar Venda" deve permanecer bloqueado (disabled) até que o "Falta Pagar" seja menor ou igual a zero.
-*   [ ] DoD Validação (frontend): campo de valor aceita só dígitos e separador decimal (máscara BRL bloqueante + erro); valor final revalidado pelo backend, que é a autoridade.
+*   [ ] DoD Validação (frontend): campo de valor aceita só dígitos e separador decimal (máscara BRL bloqueante + erro); valor final revalidado pelo backend, que é a autoridade. Testes vitest obrigatórios (validadores puros + erro/submit do componente).
 
 ---
 
@@ -246,7 +246,7 @@ O operador precisa de feedback visual imediato para dar o troco corretamente. Er
 **Critérios de Aceite (DoD):**
 *   [ ] Se o "Falta Pagar" for R$ 20 e o operador selecionar "Dinheiro" e digitar "R$ 50", a tela deve imediatamente exibir "Troco: R$ 30,00" em destaque.
 *   [ ] No payload a ser enviado para a API, este pagamento deve ir como `tendered_amount: 50`, `amount: 20`, para que o backend grave a diferença na tabela `SALE` (`change_amount: 30`).
-*   [ ] DoD Validação (frontend): input de valor entregue só aceita dígitos (máscara BRL bloqueante + erro); cálculo do troco nunca negativo (piso R$ 0,00).
+*   [ ] DoD Validação (frontend): input de valor entregue só aceita dígitos (máscara BRL bloqueante + erro); cálculo do troco nunca negativo (piso R$ 0,00). Testes vitest obrigatórios (validadores puros + erro/submit do componente).
 **Cenários de Teste (QA):**
 *   **Happy Path:** Operador digita valor superior ao devido. Troco é calculado e venda é liberada.
 *   **Edge Case:** Operador digita exatamente o valor devido. Troco deve mostrar R$ 0,00 e liberar a venda.
@@ -373,7 +373,7 @@ O dinheiro na gaveta precisa bater centavo por centavo com o que o sistema regis
 **Critérios de Aceite (DoD):**
 *   [ ] Se o estado global (`Zustand`) não identificar um `shift_id` ativo, a tela de bipar produtos deve ser bloqueada por um Modal de Abertura.
 *   [ ] No fechamento, a tela não deve mostrar o "Valor Esperado". O operador precisa contar o dinheiro e digitar quanto achou. O sistema mostrará a quebra (falta/sobra) apenas no relatório do gerente.
-*   [ ] DoD Validação (frontend): inputs de valores só aceitam dígitos (máscara BRL bloqueante + erro); contagem negativa é impossível (piso R$ 0,00).
+*   [ ] DoD Validação (frontend): inputs de valores só aceitam dígitos (máscara BRL bloqueante + erro); contagem negativa é impossível (piso R$ 0,00). Testes vitest obrigatórios (validadores puros + erro/submit do componente).
 
 ---
 
@@ -474,7 +474,7 @@ Chegou o final do mês. O "Seu João" vem à loja pagar a conta que acumulou R$ 
 *   [ ] Uma interface de busca por Nome/CPF que traga o saldo devedor total.
 *   [ ] Exibir um grid com todas as vendas em status `PENDING`.
 *   [ ] O operador pode selecionar uma, várias ou todas as vendas pendentes para quitar de uma só vez.
-*   [ ] DoD Validação (frontend): busca por Nome/CPF com máscara de CPF (só dígitos, 11 posições) e `trim`; array de `sale_id` só com UUIDs válidos antes de enviar.
+*   [ ] DoD Validação (frontend): busca por Nome/CPF com máscara de CPF (só dígitos, 11 posições) e `trim`; array de `sale_id` só com UUIDs válidos antes de enviar. Testes vitest obrigatórios (validadores puros + erro/submit do componente).
 
 #### Task 19.2: Consolidação e Gatilho Fiscal (Backend)
 **Descrição:** Endpoint para processar o pagamento e engatilhar a nota.
@@ -514,7 +514,7 @@ Toda operação que gera risco financeiro para a loja (desconto exagerado, estou
 **Critérios de Aceite (DoD):**
 *   [ ] O estado global (Zustand) deve monitorar gatilhos: Excluir item do carrinho, aplicar desconto superior a 10% ou recebimento de erro "Limite Estourado" da US18.
 *   [ ] Ao disparar o gatilho, abrir um Modal "Autorização Necessária" com teclado numérico exigindo o PIN do Gerente.
-*   [ ] DoD Validação (frontend): PIN só dígitos 4–6 (teclado numérico bloqueante + erro); desconto percentual 0–100 (nunca letras/símbolos).
+*   [ ] DoD Validação (frontend): PIN só dígitos 4–6 (teclado numérico bloqueante + erro); desconto percentual 0–100 (nunca letras/símbolos). Testes vitest obrigatórios (validadores puros + erro/submit do componente).
 
 #### Task 21.2: Endpoint de Autorização e Auditoria (Backend)
 **Descrição:** Rota sensível que valida a autoridade e carimba o passe livre temporário.

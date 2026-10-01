@@ -14,8 +14,6 @@ import {
   centsToDecimal,
   fieldError,
   formatBRLFromCents,
-  isValidBarcode,
-  isValidNcm,
   ncmError,
   onlyDigits,
 } from "../lib/masks";
@@ -85,7 +83,9 @@ export function ProductForm({ onCreated }: { onCreated: () => void }) {
     const found = validate(draft);
     setErrors(found);
     if (Object.keys(found).length > 0) {
-      setTab("geral");
+      // Leva à aba que contém erro (fiscal tem prioridade se só há erro lá).
+      const fiscal = ["ncm", "cest", "cfop", "icmsOrigin", "icmsRate"];
+      setTab(Object.keys(found).some((k) => fiscal.includes(k)) ? "fiscal" : "geral");
       return;
     }
     setSaving(true);
@@ -225,11 +225,7 @@ export function ProductForm({ onCreated }: { onCreated: () => void }) {
       {serverError && <p role="alert">{serverError}</p>}
       <button
         className="primary"
-        disabled={
-          saving ||
-          !isValidNcm(onlyDigits(draft.ncm)) ||
-          (draft.barcode !== "" && !isValidBarcode(onlyDigits(draft.barcode)))
-        }
+        disabled={saving}
         onClick={() => {
           void submit();
         }}
