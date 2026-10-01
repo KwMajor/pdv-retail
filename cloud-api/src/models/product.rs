@@ -19,6 +19,7 @@ pub struct Product {
     pub cfop: Option<String>,
     pub icms_origin: Option<String>,
     pub icms_rate: Decimal,
+    pub allow_negative_stock: bool,
     pub is_active: bool,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,

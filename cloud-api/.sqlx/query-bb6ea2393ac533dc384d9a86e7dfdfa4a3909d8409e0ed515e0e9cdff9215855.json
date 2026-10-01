@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "SELECT id, store_id, sku, barcode, name, price, cost, ncm, cest, cfop, icms_origin, icms_rate, is_active, created_at, updated_at\n             FROM product WHERE store_id = $1 AND is_active = TRUE\n             ORDER BY name ASC LIMIT $2",
+  "query": "INSERT INTO product(store_id, sku, barcode, name, price, cost, ncm, cest, cfop, icms_origin, icms_rate)\n             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)\n             RETURNING id, store_id, sku, barcode, name, price, cost, ncm, cest, cfop, icms_origin, icms_rate, allow_negative_stock, is_active, created_at, updated_at",
   "describe": {
     "columns": [
       {
@@ -65,16 +65,21 @@
       },
       {
         "ordinal": 12,
-        "name": "is_active",
+        "name": "allow_negative_stock",
         "type_info": "Bool"
       },
       {
         "ordinal": 13,
+        "name": "is_active",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 14,
         "name": "created_at",
         "type_info": "Timestamptz"
       },
       {
-        "ordinal": 14,
+        "ordinal": 15,
         "name": "updated_at",
         "type_info": "Timestamptz"
       }
@@ -82,7 +87,16 @@
     "parameters": {
       "Left": [
         "Uuid",
-        "Int8"
+        "Varchar",
+        "Varchar",
+        "Varchar",
+        "Numeric",
+        "Numeric",
+        "Varchar",
+        "Varchar",
+        "Varchar",
+        "Varchar",
+        "Numeric"
       ]
     },
     "nullable": [
@@ -100,8 +114,9 @@
       false,
       false,
       false,
+      false,
       false
     ]
   },
-  "hash": "1fdfb730576aac0c07ddaead0beb2f4e3ba73f72e8f8cc3f4b7fc2f3ff7d331a"
+  "hash": "bb6ea2393ac533dc384d9a86e7dfdfa4a3909d8409e0ed515e0e9cdff9215855"
 }

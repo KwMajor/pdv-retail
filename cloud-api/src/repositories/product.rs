@@ -34,6 +34,7 @@ pub struct ProductPatch {
     pub cfop: Option<String>,
     pub icms_origin: Option<String>,
     pub icms_rate: Option<Decimal>,
+    pub allow_negative_stock: Option<bool>,
 }
 
 pub trait ProductRepository {
@@ -105,7 +106,7 @@ impl ProductRepository for PgProductRepository {
     ) -> Result<Option<Product>, sqlx::Error> {
         sqlx::query_as!(
             Product,
-            "SELECT id, store_id, sku, barcode, name, price, cost, ncm, cest, cfop, icms_origin, icms_rate, is_active, created_at, updated_at
+            "SELECT id, store_id, sku, barcode, name, price, cost, ncm, cest, cfop, icms_origin, icms_rate, allow_negative_stock, is_active, created_at, updated_at
              FROM product WHERE store_id = $1 AND id = $2",
             store_id,
             id,
@@ -119,7 +120,7 @@ impl ProductRepository for PgProductRepository {
             Product,
             "INSERT INTO product(store_id, sku, barcode, name, price, cost, ncm, cest, cfop, icms_origin, icms_rate)
              VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-             RETURNING id, store_id, sku, barcode, name, price, cost, ncm, cest, cfop, icms_origin, icms_rate, is_active, created_at, updated_at",
+             RETURNING id, store_id, sku, barcode, name, price, cost, ncm, cest, cfop, icms_origin, icms_rate, allow_negative_stock, is_active, created_at, updated_at",
             input.store_id,
             input.sku,
             input.barcode,
@@ -139,7 +140,7 @@ impl ProductRepository for PgProductRepository {
     async fn find_by_id(&self, store_id: Uuid, id: Uuid) -> Result<Option<Product>, sqlx::Error> {
         sqlx::query_as!(
             Product,
-            "SELECT id, store_id, sku, barcode, name, price, cost, ncm, cest, cfop, icms_origin, icms_rate, is_active, created_at, updated_at
+            "SELECT id, store_id, sku, barcode, name, price, cost, ncm, cest, cfop, icms_origin, icms_rate, allow_negative_stock, is_active, created_at, updated_at
              FROM product WHERE store_id = $1 AND id = $2",
             store_id,
             id,
@@ -151,7 +152,7 @@ impl ProductRepository for PgProductRepository {
     async fn find_by_sku(&self, store_id: Uuid, sku: &str) -> Result<Option<Product>, sqlx::Error> {
         sqlx::query_as!(
             Product,
-            "SELECT id, store_id, sku, barcode, name, price, cost, ncm, cest, cfop, icms_origin, icms_rate, is_active, created_at, updated_at
+            "SELECT id, store_id, sku, barcode, name, price, cost, ncm, cest, cfop, icms_origin, icms_rate, allow_negative_stock, is_active, created_at, updated_at
              FROM product WHERE store_id = $1 AND sku = $2",
             store_id,
             sku,
@@ -167,7 +168,7 @@ impl ProductRepository for PgProductRepository {
     ) -> Result<Option<Product>, sqlx::Error> {
         sqlx::query_as!(
             Product,
-            "SELECT id, store_id, sku, barcode, name, price, cost, ncm, cest, cfop, icms_origin, icms_rate, is_active, created_at, updated_at
+            "SELECT id, store_id, sku, barcode, name, price, cost, ncm, cest, cfop, icms_origin, icms_rate, allow_negative_stock, is_active, created_at, updated_at
              FROM product WHERE store_id = $1 AND barcode = $2",
             store_id,
             barcode,
@@ -179,7 +180,7 @@ impl ProductRepository for PgProductRepository {
     async fn list_active(&self, store_id: Uuid, limit: i64) -> Result<Vec<Product>, sqlx::Error> {
         sqlx::query_as!(
             Product,
-            "SELECT id, store_id, sku, barcode, name, price, cost, ncm, cest, cfop, icms_origin, icms_rate, is_active, created_at, updated_at
+            "SELECT id, store_id, sku, barcode, name, price, cost, ncm, cest, cfop, icms_origin, icms_rate, allow_negative_stock, is_active, created_at, updated_at
              FROM product WHERE store_id = $1 AND is_active = TRUE
              ORDER BY name ASC LIMIT $2",
             store_id,
@@ -206,9 +207,10 @@ impl ProductRepository for PgProductRepository {
                cest = COALESCE($8, cest),
                cfop = COALESCE($9, cfop),
                icms_origin = COALESCE($10, icms_origin),
-               icms_rate = COALESCE($11, icms_rate)
+               icms_rate = COALESCE($11, icms_rate),
+               allow_negative_stock = COALESCE($12, allow_negative_stock)
              WHERE store_id = $1 AND id = $2
-             RETURNING id, store_id, sku, barcode, name, price, cost, ncm, cest, cfop, icms_origin, icms_rate, is_active, created_at, updated_at",
+             RETURNING id, store_id, sku, barcode, name, price, cost, ncm, cest, cfop, icms_origin, icms_rate, allow_negative_stock, is_active, created_at, updated_at",
             store_id,
             id,
             patch.name,
@@ -220,6 +222,7 @@ impl ProductRepository for PgProductRepository {
             patch.cfop,
             patch.icms_origin,
             patch.icms_rate,
+            patch.allow_negative_stock,
         )
         .fetch_one(&self.pool)
         .await
@@ -236,7 +239,7 @@ impl ProductRepository for PgProductRepository {
         let like = ["%", term, "%"].concat();
         sqlx::query_as!(
             Product,
-            "SELECT id, store_id, sku, barcode, name, price, cost, ncm, cest, cfop, icms_origin, icms_rate, is_active, created_at, updated_at
+            "SELECT id, store_id, sku, barcode, name, price, cost, ncm, cest, cfop, icms_origin, icms_rate, allow_negative_stock, is_active, created_at, updated_at
              FROM product
              WHERE store_id = $1 AND is_active = TRUE
                AND (name ILIKE $2 OR sku ILIKE $2 OR COALESCE(barcode, '') ILIKE $2)
@@ -267,9 +270,10 @@ impl ProductRepository for PgProductRepository {
                cest = COALESCE($8, cest),
                cfop = COALESCE($9, cfop),
                icms_origin = COALESCE($10, icms_origin),
-               icms_rate = COALESCE($11, icms_rate)
+               icms_rate = COALESCE($11, icms_rate),
+               allow_negative_stock = COALESCE($12, allow_negative_stock)
              WHERE store_id = $1 AND id = $2
-             RETURNING id, store_id, sku, barcode, name, price, cost, ncm, cest, cfop, icms_origin, icms_rate, is_active, created_at, updated_at",
+             RETURNING id, store_id, sku, barcode, name, price, cost, ncm, cest, cfop, icms_origin, icms_rate, allow_negative_stock, is_active, created_at, updated_at",
             store_id,
             id,
             patch.name,
@@ -281,6 +285,7 @@ impl ProductRepository for PgProductRepository {
             patch.cfop,
             patch.icms_origin,
             patch.icms_rate,
+            patch.allow_negative_stock,
         )
         .fetch_one(&mut **tx)
         .await
@@ -296,7 +301,7 @@ impl ProductRepository for PgProductRepository {
         sqlx::query_as!(
             Product,
             "UPDATE product SET price = $3 WHERE store_id = $1 AND id = $2
-             RETURNING id, store_id, sku, barcode, name, price, cost, ncm, cest, cfop, icms_origin, icms_rate, is_active, created_at, updated_at",
+             RETURNING id, store_id, sku, barcode, name, price, cost, ncm, cest, cfop, icms_origin, icms_rate, allow_negative_stock, is_active, created_at, updated_at",
             store_id,
             id,
             price,
@@ -309,7 +314,7 @@ impl ProductRepository for PgProductRepository {
         sqlx::query_as!(
             Product,
             "UPDATE product SET is_active = FALSE WHERE store_id = $1 AND id = $2
-             RETURNING id, store_id, sku, barcode, name, price, cost, ncm, cest, cfop, icms_origin, icms_rate, is_active, created_at, updated_at",
+             RETURNING id, store_id, sku, barcode, name, price, cost, ncm, cest, cfop, icms_origin, icms_rate, allow_negative_stock, is_active, created_at, updated_at",
             store_id,
             id,
         )

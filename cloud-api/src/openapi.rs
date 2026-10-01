@@ -9,7 +9,7 @@
 use utoipa::openapi::security::{HttpAuthScheme, HttpBuilder, SecurityScheme};
 use utoipa::{Modify, OpenApi};
 
-use crate::controllers::{health, ping, products, session, users};
+use crate::controllers::{health, ping, products, session, stock, users};
 use crate::errors::ErrorBody;
 use crate::models::UserRole;
 
@@ -21,6 +21,7 @@ pub mod routes {
     pub const USERS: &str = "/api/v1/users";
     pub const ME: &str = "/api/v1/me";
     pub const LOGIN: &str = "/api/v1/auth/login";
+    pub const STOCK_ADJUST: &str = "/api/v1/stock/adjust";
     pub const PRODUCTS: &str = "/api/v1/products";
     pub const PRODUCT_BY_ID: &str = "/api/v1/products/{id}";
     pub const OPENAPI_JSON: &str = "/api-docs/openapi.json";
@@ -36,6 +37,7 @@ pub mod routes {
         LOGIN,
         PRODUCTS,
         PRODUCT_BY_ID,
+        STOCK_ADJUST,
     ];
 }
 
@@ -73,6 +75,7 @@ impl Modify for SecurityAddon {
         products::get_product_handler,
         products::update_product_handler,
         products::delete_product_handler,
+        stock::adjust_stock_handler,
     ),
     components(
         schemas(
@@ -87,6 +90,9 @@ impl Modify for SecurityAddon {
             products::UpdateProductRequest,
             products::ListProductsQuery,
             products::ProductResponse,
+            stock::AdjustStockRequest,
+            stock::AdjustStockItem,
+            stock::StockResponse,
             UserRole,
             ErrorBody,
         )
@@ -98,6 +104,7 @@ impl Modify for SecurityAddon {
         (name = "usuarios", description = "Gestão de funcionários (gestão)"),
         (name = "auth", description = "Emissão de JWT"),
         (name = "produtos", description = "Catálogo e parâmetros fiscais"),
+        (name = "estoque", description = "Ledger e ajustes (gestão)"),
     ),
 )]
 pub struct ApiDoc;
