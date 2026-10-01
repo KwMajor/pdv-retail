@@ -2,8 +2,9 @@
 name = "pdv-cloud-api"
 version = "0.1.0"
 edition = "2024"
-# SaaS closed-source: nunca publicar no crates.io (também ativa o
-# `private.ignore` do cargo-deny para este crate).
+# Projeto open-source (MIT). Sem publicação no crates.io por ora (também
+# ativa o `private.ignore` do cargo-deny para este crate).
+license = "MIT"
 publish = false
 
 [dependencies]
