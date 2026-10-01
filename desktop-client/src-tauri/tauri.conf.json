@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "PDV Retail",
+  "productName": "PDV",
   "version": "0.1.0",
-  "identifier": "br.com.pdvretail.pdv",
+  "identifier": "app.pdv.pos",
   "build": {
     "frontendDist": "../dist",
     "devUrl": "http://localhost:1420",
@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "PDV Retail",
+        "title": "PDV",
         "width": 1280,
         "height": 800,
         "minWidth": 1024,
@@ -20,7 +20,7 @@
       }
     ],
     "security": {
-      "csp": "default-src 'self'; connect-src 'self' https://api.pdvretail.local"
+      "csp": "default-src 'self'; connect-src 'self' http://localhost:* https://*.onrender.com"
     }
   },
   "bundle": {

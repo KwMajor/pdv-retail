@@ -6,8 +6,8 @@
 
 ---
 
-## 1. Stack Tecnológica e Restrições de Licenciamento
-Este projeto tem fins comerciais (Closed-Source SaaS). Portanto, você deve utilizar **exclusivamente tecnologias e bibliotecas open-source com licenças permissivas** (MIT, Apache 2.0, BSD, PostgreSQL License). É terminantemente proibido sugerir ou gerar código que dependa de bibliotecas sob licenças virais como GPL ou AGPL.
+## 1. Licença do Projeto e Dependências
+Este projeto é open-source sob **licença MIT** (`LICENSE` na raiz): qualquer pessoa pode usar, forkar e modificar, inclusive comercialmente, por sua conta e risco (sem garantia nem responsabilização do autor — inclusive quanto ao uso fiscal). Por higiene, **prefira dependências com licenças permissivas** (MIT, Apache 2.0, BSD, ISC, PostgreSQL License); dependências sob licenças virais (GPL/AGPL) exigem aprovação explícita do mantenedor antes de entrar no `Cargo.toml`/`package.json` (o gate `cargo-deny` barra copyleft por padrão).
 
 A arquitetura está dividida em dois ecossistemas:
 *   **Cloud API (Backend na Nuvem):** 
