@@ -1,7 +1,13 @@
-# Sistema PDV SaaS (Retail)
+# Sistema PDV (Open Source, MIT)
 
 ## Sobre o Projeto
-Este projeto tem como objetivo o desenvolvimento de um aplicativo multiplataforma moderno para operação de frente de caixa (PDV) e retaguarda gerencial. A solução foi desenhada no modelo Multi-Tenant (SaaS), permitindo que múltiplas lojas independentes utilizem a mesma infraestrutura de banco de dados e backend na nuvem com isolamento total de informações. O frontend roda nativamente no sistema operacional via Tauri, permitindo acesso direto ao hardware do lojista com consumo mínimo de recursos.
+Aplicativo multiplataforma open-source para operação de frente de caixa (PDV) e retaguarda gerencial. A solução foi desenhada no modelo Multi-Tenant (SaaS), permitindo que múltiplas lojas independentes utilizem a mesma infraestrutura de banco de dados e backend na nuvem com isolamento total de informações. O frontend roda nativamente no sistema operacional via Tauri, permitindo acesso direto ao hardware do lojista com consumo mínimo de recursos.
+
+## Licença
+Distribuído sob a licença **MIT** (ver `LICENSE`): você pode usar, forkar e modificar — inclusive comercialmente — por sua conta e risco, sem garantia de qualquer tipo.
+
+## Aviso Fiscal
+Este sistema auxilia na emissão de documentos fiscais (NFC-e/NF-e), mas **a responsabilidade fiscal é integralmente do operador/loja** (parametrização, certificado digital e cumprimento das obrigações junto à SEFAZ e à contabilidade). O autor não responde por autuações, rejeições ou inconsistências decorrentes do uso ou de modificações no código.
 
 ## Contexto de Aplicação
 A solução foi projetada para atender ao pequeno e médio varejo brasileiro (mercados, lojas de conveniência, autopeças, etc). Nesse cenário, o sistema é dimensionado para:
@@ -13,8 +19,8 @@ A solução foi projetada para atender ao pequeno e médio varejo brasileiro (me
 
 ---
 
-## Stack Tecnológica e Licenciamento
-O sistema foi arquitetado visando alta performance, baixo consumo de recursos e segurança jurídica para comercialização (Closed-Source SaaS). Todas as tecnologias e bibliotecas adotadas possuem licenças permissivas open-source (**MIT, Apache 2.0, BSD ou PostgreSQL License**), garantindo que não há exigência de abertura de código ou pagamento de royalties comerciais.
+## Stack Tecnológica
+O sistema foi arquitetado visando alta performance, baixo consumo de recursos e licenças permissivas (**MIT, Apache 2.0, BSD, ISC ou PostgreSQL License**), sem amarras de copyleft nas dependências.
 
 **Backend (API na Nuvem)**
 *   **Linguagem:** Rust (MIT / Apache 2.0) — Escolhida pela alta concorrência e uso eficiente de memória.
@@ -98,8 +104,6 @@ Para que uma User Story seja considerada pronta para entrar em uma Sprint, ela d
 
 ---
 
-## Equipe
+## Créditos
 
-|    Função     | Nome                                  |                                                                                                                                                      LinkedIn & GitHub                                                                                                                                                      |
-| :-----------: | :------------------------------------ | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------: |
-|  Tech Lead / Dev | Matheus Ramos               |   [![Linkedin Badge](https://img.shields.io/badge/Linkedin-blue?style=flat-square&logo=Linkedin&logoColor=white)](https://www.linkedin.com/in/matheusfcrms/) [![GitHub Badge](https://img.shields.io/badge/GitHub-111217?style=flat-square&logo=github&logoColor=white)](https://github.com/KwMajor)   |
+Arquitetado e desenvolvido por [Matheus Ramos](https://github.com/KwMajor) — [LinkedIn](https://www.linkedin.com/in/matheusfcrms/) · [matheuskwta@gmail.com](mailto:matheuskwta@gmail.com).
