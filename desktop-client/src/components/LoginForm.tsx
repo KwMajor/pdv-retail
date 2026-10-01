@@ -8,6 +8,7 @@
 
 import { useState } from "react";
 import { useSession } from "../stores/session";
+import { CreditFooter } from "./CreditFooter";
 
 export function LoginForm() {
   const login = useSession((s) => s.login);
@@ -35,7 +36,7 @@ export function LoginForm() {
 
   return (
     <section aria-label="Login do operador" className="card">
-      <h1>PDV Retail — Entrar</h1>
+      <h1>PDV — Entrar</h1>
       <label>
         ID da loja (UUID)
         <input
@@ -69,6 +70,7 @@ export function LoginForm() {
       <button disabled={busy} className="primary" onClick={() => void submit()}>
         {busy ? "Entrando…" : "Entrar"}
       </button>
+      <CreditFooter />
     </section>
   );
 }
