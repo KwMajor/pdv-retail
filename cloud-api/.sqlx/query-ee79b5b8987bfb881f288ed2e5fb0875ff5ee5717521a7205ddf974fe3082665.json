@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "UPDATE product SET\n               name = COALESCE($3, name),\n               barcode = COALESCE($4, barcode),\n               price = COALESCE($5, price),\n               cost = COALESCE($6, cost),\n               ncm = COALESCE($7, ncm),\n               cest = COALESCE($8, cest),\n               cfop = COALESCE($9, cfop),\n               icms_origin = COALESCE($10, icms_origin),\n               icms_rate = COALESCE($11, icms_rate)\n             WHERE store_id = $1 AND id = $2\n             RETURNING id, store_id, sku, barcode, name, price, cost, ncm, cest, cfop, icms_origin, icms_rate, is_active, created_at, updated_at",
+  "query": "UPDATE product SET price = $3 WHERE store_id = $1 AND id = $2\n             RETURNING id, store_id, sku, barcode, name, price, cost, ncm, cest, cfop, icms_origin, icms_rate, allow_negative_stock, is_active, created_at, updated_at",
   "describe": {
     "columns": [
       {
@@ -65,16 +65,21 @@
       },
       {
         "ordinal": 12,
-        "name": "is_active",
+        "name": "allow_negative_stock",
         "type_info": "Bool"
       },
       {
         "ordinal": 13,
+        "name": "is_active",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 14,
         "name": "created_at",
         "type_info": "Timestamptz"
       },
       {
-        "ordinal": 14,
+        "ordinal": 15,
         "name": "updated_at",
         "type_info": "Timestamptz"
       }
@@ -83,14 +88,6 @@
       "Left": [
         "Uuid",
         "Uuid",
-        "Varchar",
-        "Varchar",
-        "Numeric",
-        "Numeric",
-        "Varchar",
-        "Varchar",
-        "Varchar",
-        "Varchar",
         "Numeric"
       ]
     },
@@ -109,8 +106,9 @@
       false,
       false,
       false,
+      false,
       false
     ]
   },
-  "hash": "403c3a05b82a0d8e07f4a0ec551b5e1469c40e1affdfc59778c0f34c1759f50b"
+  "hash": "ee79b5b8987bfb881f288ed2e5fb0875ff5ee5717521a7205ddf974fe3082665"
 }

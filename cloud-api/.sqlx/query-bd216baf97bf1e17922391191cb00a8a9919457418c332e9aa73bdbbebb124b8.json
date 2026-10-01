@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "UPDATE product SET price = $3 WHERE store_id = $1 AND id = $2\n             RETURNING id, store_id, sku, barcode, name, price, cost, ncm, cest, cfop, icms_origin, icms_rate, is_active, created_at, updated_at",
+  "query": "SELECT id, store_id, sku, barcode, name, price, cost, ncm, cest, cfop, icms_origin, icms_rate, allow_negative_stock, is_active, created_at, updated_at\n             FROM product WHERE store_id = $1 AND sku = $2",
   "describe": {
     "columns": [
       {
@@ -65,16 +65,21 @@
       },
       {
         "ordinal": 12,
-        "name": "is_active",
+        "name": "allow_negative_stock",
         "type_info": "Bool"
       },
       {
         "ordinal": 13,
+        "name": "is_active",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 14,
         "name": "created_at",
         "type_info": "Timestamptz"
       },
       {
-        "ordinal": 14,
+        "ordinal": 15,
         "name": "updated_at",
         "type_info": "Timestamptz"
       }
@@ -82,8 +87,7 @@
     "parameters": {
       "Left": [
         "Uuid",
-        "Uuid",
-        "Numeric"
+        "Text"
       ]
     },
     "nullable": [
@@ -101,8 +105,9 @@
       false,
       false,
       false,
+      false,
       false
     ]
   },
-  "hash": "b67bda322899f52ad468417d6fe2aba34f6e97bfbe22850f03f1e0c6060a07d7"
+  "hash": "bd216baf97bf1e17922391191cb00a8a9919457418c332e9aa73bdbbebb124b8"
 }

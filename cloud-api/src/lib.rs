@@ -51,6 +51,10 @@ pub fn app_router(state: AppState) -> Router {
         .route(routes::ME, get(controllers::users::me_handler))
         .route(routes::LOGIN, post(controllers::session::login_handler))
         .route(
+            routes::STOCK_ADJUST,
+            post(controllers::stock::adjust_stock_handler),
+        )
+        .route(
             routes::PRODUCTS,
             post(controllers::products::create_product_handler)
                 .get(controllers::products::list_products_handler),

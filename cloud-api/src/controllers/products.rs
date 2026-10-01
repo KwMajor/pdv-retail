@@ -49,6 +49,8 @@ pub struct UpdateProductRequest {
     pub cfop: Option<String>,
     pub icms_origin: Option<String>,
     pub icms_rate: Option<Decimal>,
+    /// Libera saldo negativo (encomenda/serviço). Só gestão, via PUT.
+    pub allow_negative_stock: Option<bool>,
 }
 
 #[derive(Debug, serde::Deserialize, utoipa::ToSchema, utoipa::IntoParams)]
@@ -80,6 +82,7 @@ pub struct ProductResponse {
     pub icms_origin: Option<String>,
     #[schema(value_type = String)]
     pub icms_rate: Decimal,
+    pub allow_negative_stock: bool,
     pub is_active: bool,
 }
 
@@ -98,6 +101,7 @@ impl From<Product> for ProductResponse {
             cfop: p.cfop,
             icms_origin: p.icms_origin,
             icms_rate: p.icms_rate,
+            allow_negative_stock: p.allow_negative_stock,
             is_active: p.is_active,
         }
     }
@@ -252,6 +256,7 @@ pub async fn update_product_handler(
             cfop: body.cfop,
             icms_origin: body.icms_origin,
             icms_rate: body.icms_rate,
+            allow_negative_stock: body.allow_negative_stock,
         },
         Some(ctx.user_id),
     )

@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "SELECT id, store_id, sku, barcode, name, price, cost, ncm, cest, cfop, icms_origin, icms_rate, is_active, created_at, updated_at\n             FROM product WHERE store_id = $1 AND id = $2",
+  "query": "SELECT id, store_id, sku, barcode, name, price, cost, ncm, cest, cfop, icms_origin, icms_rate, allow_negative_stock, is_active, created_at, updated_at\n             FROM product WHERE store_id = $1 AND barcode = $2",
   "describe": {
     "columns": [
       {
@@ -65,16 +65,21 @@
       },
       {
         "ordinal": 12,
-        "name": "is_active",
+        "name": "allow_negative_stock",
         "type_info": "Bool"
       },
       {
         "ordinal": 13,
+        "name": "is_active",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 14,
         "name": "created_at",
         "type_info": "Timestamptz"
       },
       {
-        "ordinal": 14,
+        "ordinal": 15,
         "name": "updated_at",
         "type_info": "Timestamptz"
       }
@@ -82,7 +87,7 @@
     "parameters": {
       "Left": [
         "Uuid",
-        "Uuid"
+        "Text"
       ]
     },
     "nullable": [
@@ -100,8 +105,9 @@
       false,
       false,
       false,
+      false,
       false
     ]
   },
-  "hash": "0cf493da8344b58a9f0850686c0c698ea2bcf56cbefc0cdd4f58b8b086409433"
+  "hash": "6b9e1ff3935519b776ed8e75dd48dcc50a31c1d221e9528314ae88e87b90b5ac"
 }

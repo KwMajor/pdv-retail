@@ -44,6 +44,7 @@ pub struct UpdateProductInput {
     pub cfop: Option<String>,
     pub icms_origin: Option<String>,
     pub icms_rate: Option<Decimal>,
+    pub allow_negative_stock: Option<bool>,
 }
 
 #[derive(Debug, thiserror::Error)]
@@ -252,6 +253,7 @@ pub async fn update_product(
             .transpose()?
             .flatten(),
         icms_rate: input.icms_rate.map(|v| rate(v, "icms_rate")).transpose()?,
+        allow_negative_stock: input.allow_negative_stock,
     };
 
     let products = PgProductRepository::new(pool.clone());

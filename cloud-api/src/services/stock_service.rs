@@ -112,6 +112,80 @@ pub async fn apply_movement(
     Ok((movement, stock))
 }
 
+/// Um item do ajuste manual (US04 Task 4.2).
+pub struct AdjustItem {
+    pub product_id: Uuid,
+    pub qty_delta: Decimal,
+}
+
+/// Ajuste manual em lote (US04 Task 4.2): tudo-ou-nada numa transação.
+/// `reason` é o motivo humano (ex: "quebra de validade", "NF 123") — admite
+/// texto livre porque o gerente descreve o fato, não uma categoria.
+/// Trava de saldo negativo: item que zeraria abaixo (sem flag
+/// `allow_negative_stock`) aborta o LOTE inteiro com `Invalid` (422).
+pub async fn adjust_stock(
+    pool: &sqlx::PgPool,
+    store_id: Uuid,
+    items: Vec<AdjustItem>,
+    reason: String,
+) -> Result<Vec<Stock>, MovementError> {
+    let reason = reason.trim().to_string();
+    if reason.is_empty() {
+        return Err(MovementError::Invalid(
+            "motivo do ajuste é obrigatório".to_string(),
+        ));
+    }
+    if reason.chars().count() > 500 {
+        return Err(MovementError::Invalid(
+            "motivo deve ter no máximo 500 caracteres".to_string(),
+        ));
+    }
+    if items.is_empty() {
+        return Err(MovementError::Invalid(
+            "ajuste precisa de ao menos um item".to_string(),
+        ));
+    }
+    for item in &items {
+        qty_delta(item.qty_delta)?;
+    }
+
+    let products = PgProductRepository::new(pool.clone());
+    let movements = PgStockMovementRepository::new(pool.clone());
+    let stocks = PgStockRepository::new(pool.clone());
+    let mut tx = pool.begin().await.map_err(MovementError::Db)?;
+    let mut saldos = Vec::with_capacity(items.len());
+    for item in &items {
+        let product = products
+            .find_by_id_tx(&mut tx, store_id, item.product_id)
+            .await?
+            .ok_or(MovementError::ProductNotFound)?;
+        movements
+            .record_tx(
+                &mut tx,
+                NewStockMovement {
+                    store_id,
+                    product_id: item.product_id,
+                    qty_delta: item.qty_delta,
+                    reason: reason.clone(),
+                    ref_sale_id: None,
+                },
+            )
+            .await?;
+        let saldo = stocks
+            .add_tx(&mut tx, store_id, item.product_id, item.qty_delta)
+            .await?;
+        if saldo.quantity < Decimal::ZERO && !product.allow_negative_stock {
+            return Err(MovementError::Invalid(format!(
+                "ajuste deixaria saldo negativo (produto {})",
+                item.product_id
+            )));
+        }
+        saldos.push(saldo);
+    }
+    tx.commit().await.map_err(MovementError::Db)?;
+    Ok(saldos)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
