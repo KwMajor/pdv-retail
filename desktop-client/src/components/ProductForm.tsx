@@ -7,6 +7,7 @@
  * (autoridade) responde 422 no que passar. Dinheiro sai em centavos→decimal.
  */
 
+import * as Tabs from "@radix-ui/react-tabs";
 import { useState } from "react";
 import {
   barcodeError,
@@ -117,17 +118,14 @@ export function ProductForm({ onCreated }: { onCreated: () => void }) {
 
   return (
     <section aria-label="Cadastro de produto" className="card">
-      <div role="tablist">
-        <button role="tab" aria-selected={tab === "geral"} onClick={() => setTab("geral")}>
-          Dados Gerais
-        </button>
-        <button role="tab" aria-selected={tab === "fiscal"} onClick={() => setTab("fiscal")}>
-          Fiscal
-        </button>
-      </div>
+      <Tabs.Root value={tab} onValueChange={(v) => setTab(v as Tab)}>
+        <Tabs.List aria-label="Seções do produto">
+          <Tabs.Trigger value="geral">Dados Gerais</Tabs.Trigger>
+          <Tabs.Trigger value="fiscal">Fiscal</Tabs.Trigger>
+        </Tabs.List>
 
-      {tab === "geral" && (
-        <div>
+        <Tabs.Content value="geral">
+          <div>
           <label>
             Nome*
             <input value={draft.name} onChange={(e) => set("name")(e.target.value)} maxLength={255} />
@@ -167,10 +165,10 @@ export function ProductForm({ onCreated }: { onCreated: () => void }) {
             />
           </label>
         </div>
-      )}
+        </Tabs.Content>
 
-      {tab === "fiscal" && (
-        <div>
+        <Tabs.Content value="fiscal">
+          <div>
           <label>
             NCM*
             <input
@@ -221,7 +219,8 @@ export function ProductForm({ onCreated }: { onCreated: () => void }) {
             {err("icmsRate")}
           </label>
         </div>
-      )}
+        </Tabs.Content>
+      </Tabs.Root>
 
       {serverError && <p role="alert">{serverError}</p>}
       <button

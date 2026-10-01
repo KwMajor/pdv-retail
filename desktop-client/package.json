@@ -10,6 +10,7 @@
     "lint": "eslint src/"
   },
   "dependencies": {
+    "@radix-ui/react-tabs": "^1.1.21",
     "@tauri-apps/api": "^2",
     "react": "^18",
     "react-dom": "^18",
