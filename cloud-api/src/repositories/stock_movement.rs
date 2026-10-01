@@ -18,6 +18,12 @@ pub struct NewStockMovement {
 
 pub trait StockMovementRepository {
     async fn record(&self, input: NewStockMovement) -> Result<StockMovement, sqlx::Error>;
+    /// Inserção dentro de transação (motor de estoque: falha aqui = rollback).
+    async fn record_tx(
+        &self,
+        tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
+        input: NewStockMovement,
+    ) -> Result<StockMovement, sqlx::Error>;
     async fn list_by_product(
         &self,
         store_id: Uuid,
@@ -51,6 +57,26 @@ impl StockMovementRepository for PgStockMovementRepository {
             input.ref_sale_id,
         )
         .fetch_one(&self.pool)
+        .await
+    }
+
+    async fn record_tx(
+        &self,
+        tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
+        input: NewStockMovement,
+    ) -> Result<StockMovement, sqlx::Error> {
+        sqlx::query_as!(
+            StockMovement,
+            "INSERT INTO stock_movement(store_id, product_id, qty_delta, reason, ref_sale_id)
+             VALUES ($1, $2, $3, $4, $5)
+             RETURNING id, store_id, product_id, qty_delta, reason, ref_sale_id, created_at",
+            input.store_id,
+            input.product_id,
+            input.qty_delta,
+            input.reason,
+            input.ref_sale_id,
+        )
+        .fetch_one(&mut **tx)
         .await
     }
 

@@ -5,6 +5,7 @@
 
 pub mod product_service;
 pub mod session_service;
+pub mod stock_service;
 pub mod user_service;
 
 pub use user_service::{CreateUserError, CreateUserInput, create_user};
