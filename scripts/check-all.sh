@@ -69,9 +69,10 @@ docker run --rm -v "$ROOT:/src" -w /src --network host -e SEMGREP_SEND_METRICS=o
 ok "semgrep"
 
 # --- frontend (job: frontend) ----------------------------------------------------------
-step "tsc + eslint + vite build + npm audit"
+step "tsc + eslint + vitest + vite build + npm audit"
 ( cd "$ROOT/desktop-client" && ./node_modules/.bin/tsc --noEmit ) || fail "tsc acusou"
 ( cd "$ROOT/desktop-client" && ./node_modules/.bin/eslint src/ ) || fail "eslint acusou"
+( cd "$ROOT/desktop-client" && npm test ) || fail "vitest acusou"
 ( cd "$ROOT/desktop-client" && npm run build ) || fail "vite build quebrou"
 ( cd "$ROOT/desktop-client" && npm audit --omit=dev --audit-level=moderate ) || fail "npm audit acusou"
 ok "frontend"

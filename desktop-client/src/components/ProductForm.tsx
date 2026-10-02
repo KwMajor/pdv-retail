@@ -7,14 +7,13 @@
  * (autoridade) responde 422 no que passar. Dinheiro sai em centavos→decimal.
  */
 
+import * as Tabs from "@radix-ui/react-tabs";
 import { useState } from "react";
 import {
   barcodeError,
   centsToDecimal,
   fieldError,
   formatBRLFromCents,
-  isValidBarcode,
-  isValidNcm,
   ncmError,
   onlyDigits,
 } from "../lib/masks";
@@ -84,7 +83,9 @@ export function ProductForm({ onCreated }: { onCreated: () => void }) {
     const found = validate(draft);
     setErrors(found);
     if (Object.keys(found).length > 0) {
-      setTab("geral");
+      // Leva à aba que contém erro (fiscal tem prioridade se só há erro lá).
+      const fiscal = ["ncm", "cest", "cfop", "icmsOrigin", "icmsRate"];
+      setTab(Object.keys(found).some((k) => fiscal.includes(k)) ? "fiscal" : "geral");
       return;
     }
     setSaving(true);
@@ -116,18 +117,15 @@ export function ProductForm({ onCreated }: { onCreated: () => void }) {
     errors[k] ? <span role="alert">{errors[k]}</span> : null;
 
   return (
-    <section aria-label="Cadastro de produto">
-      <div role="tablist">
-        <button role="tab" aria-selected={tab === "geral"} onClick={() => setTab("geral")}>
-          Dados Gerais
-        </button>
-        <button role="tab" aria-selected={tab === "fiscal"} onClick={() => setTab("fiscal")}>
-          Fiscal
-        </button>
-      </div>
+    <section aria-label="Cadastro de produto" className="card">
+      <Tabs.Root value={tab} onValueChange={(v) => setTab(v as Tab)}>
+        <Tabs.List aria-label="Seções do produto">
+          <Tabs.Trigger value="geral">Dados Gerais</Tabs.Trigger>
+          <Tabs.Trigger value="fiscal">Fiscal</Tabs.Trigger>
+        </Tabs.List>
 
-      {tab === "geral" && (
-        <div>
+        <Tabs.Content value="geral">
+          <div>
           <label>
             Nome*
             <input value={draft.name} onChange={(e) => set("name")(e.target.value)} maxLength={255} />
@@ -167,10 +165,10 @@ export function ProductForm({ onCreated }: { onCreated: () => void }) {
             />
           </label>
         </div>
-      )}
+        </Tabs.Content>
 
-      {tab === "fiscal" && (
-        <div>
+        <Tabs.Content value="fiscal">
+          <div>
           <label>
             NCM*
             <input
@@ -221,15 +219,13 @@ export function ProductForm({ onCreated }: { onCreated: () => void }) {
             {err("icmsRate")}
           </label>
         </div>
-      )}
+        </Tabs.Content>
+      </Tabs.Root>
 
       {serverError && <p role="alert">{serverError}</p>}
       <button
-        disabled={
-          saving ||
-          !isValidNcm(onlyDigits(draft.ncm)) ||
-          (draft.barcode !== "" && !isValidBarcode(onlyDigits(draft.barcode)))
-        }
+        className="primary"
+        disabled={saving}
         onClick={() => {
           void submit();
         }}

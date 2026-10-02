@@ -1,0 +1,91 @@
+/**
+ * BASE (whitelabel): reset enxuto + primitivos com tokens.
+ * Componentes usam estas classes/elementos; cor/radius/fonte vêm de tokens.css.
+ */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  font-size: var(--text-md);
+  color: var(--text-body);
+  background: var(--surface-page);
+}
+
+button {
+  font: inherit;
+  min-height: var(--tap-min);
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  background: var(--surface-card);
+  color: var(--text-strong);
+  cursor: pointer;
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+button.primary {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: var(--text-on-primary);
+}
+
+button.primary:hover:not(:disabled) {
+  background: var(--primary-hover);
+}
+
+input,
+select {
+  font: inherit;
+  min-height: var(--tap-min);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-strong);
+  background: var(--surface-card);
+  color: var(--text-strong);
+  width: 100%;
+}
+
+label {
+  display: grid;
+  gap: var(--space-1);
+  color: var(--text-body);
+}
+
+/* Foco sempre visível: operador navega sem mouse. */
+:focus-visible {
+  outline: 3px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+/* Erros de validação (role="alert" no JSX). */
+[role="alert"] {
+  color: var(--danger);
+  font-size: var(--text-sm);
+}
+
+/* Navegação e cartões. */
+.card {
+  background: var(--surface-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition: none !important;
+    animation: none !important;
+  }
+}
