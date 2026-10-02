@@ -1,6 +1,6 @@
 //! Catálogo de produtos (US03 Task 3.1).
 //!
-//! Validação autoritária de todos os campos (TASKS.md DoD Validação):
+//! Validação autoritária de todos os campos (tipos, tamanhos, padrões):
 //! tipos, tamanhos, padrões e faixas — fora do domínio → `Invalid` (422).
 //! NCM é obrigatório na criação (rigor SEFAZ); `store_id` sempre do token.
 

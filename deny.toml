@@ -16,7 +16,7 @@ ignore = [
 ]
 
 [licenses]
-# Só permissivas (AGENTS.md §1). Com `allow` presente, não-listadas = deny.
+# Só licenças permissivas. Com `allow` presente, não-listadas = deny.
 # Copyleft (GPL/AGPL/LGPL) jamais entra na lista.
 allow = [
   "MIT",

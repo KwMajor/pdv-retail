@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Portão local do CI (AGENTS.md §8): espelha os jobs de `.github/workflows/ci.yml`.
+# Portão local do CI: espelha os jobs de `.github/workflows/ci.yml`.
 # OBRIGATÓRIO verde antes de todo `git push` (o hook pre-push chama daqui).
 # Falha no primeiro gate vermelho, ecoando o comando exato para reproduzir.
 #

@@ -19,3 +19,7 @@ Thumbs.db
 
 # Logs locais
 *.log
+
+# Processo interno (visível só local; NUNCA commitar)
+AGENTS.md
+TASKS.md

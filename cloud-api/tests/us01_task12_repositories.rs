@@ -454,7 +454,7 @@ async fn cross_tenant_barrado_no_banco_via_repo() {
 
 #[tokio::test]
 async fn sale_item_congela_custo_para_lucro_bruto() {
-    // Fix US01 (TASKS.md): lucro futuro usa o custo CONGELADO, nunca o atual.
+    // Lucro futuro usa o custo CONGELADO, nunca o atual.
     // 2 un a R$ 5,99 com custo R$ 3,00 → lucro R$ 5,98 mesmo após o custo virar R$ 9,99.
     let pool = fresh_pool().await;
     let stores = PgStoreSettingsRepository::new(pool.clone());
