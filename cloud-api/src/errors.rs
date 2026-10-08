@@ -13,8 +13,6 @@ pub struct ErrorBody {
 }
 
 #[derive(Debug, thiserror::Error)]
-// Variantes de auth serão consumidas na US02; mantém o build sem warnings até lá.
-#[allow(dead_code)]
 pub enum AppError {
     #[error("erro de banco de dados")]
     Db(#[from] sqlx::Error),
@@ -59,8 +57,16 @@ impl IntoResponse for AppError {
                 "erro interno".to_string(),
             ),
         };
+        // Log operacional SEM o `Debug` completo: a mensagem do driver pode
+        // ecoar valores de constraint (ex: email duplicado) — PII não vai
+        // para stdout/coletores. Só o código estático, rastreável ao status.
         if matches!(self, AppError::Db(_) | AppError::Internal(_)) {
-            tracing::error!(?self, "app error");
+            let code = if matches!(self, AppError::Db(_)) {
+                "DB_ERROR"
+            } else {
+                "INTERNAL"
+            };
+            tracing::error!(code, "app error");
         }
         (
             status,

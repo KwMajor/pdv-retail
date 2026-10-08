@@ -10,7 +10,9 @@ use pdv_desktop::commands::{
 };
 
 fn main() {
-    tauri::Builder::default()
+    // Sem `expect` no boot: falha de inicialização vira mensagem + exit(1),
+    // nunca panic (sem stack trace para o operador do caixa).
+    if let Err(e) = tauri::Builder::default()
         .manage(VaultState::default())
         .invoke_handler(tauri::generate_handler![
             save_session_token,
@@ -18,5 +20,8 @@ fn main() {
             clear_session_token,
         ])
         .run(tauri::generate_context!())
-        .expect("erro ao iniciar o PDV desktop");
+    {
+        eprintln!("falha ao iniciar o PDV desktop: {e}");
+        std::process::exit(1);
+    }
 }

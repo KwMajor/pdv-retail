@@ -1,5 +1,7 @@
 # Segredos locais — NUNCA commitar (LGPD/SEFAZ: certificado A1, chaves, .env)
 .env
+.env.*
+!.env.example
 *.pfx
 *.p12
 *.pem
