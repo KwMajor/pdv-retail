@@ -8,6 +8,7 @@ use rust_decimal::Decimal;
 use uuid::Uuid;
 
 use crate::models::Product;
+use crate::money::canonical_money;
 use crate::repositories::{
     AuditLogRepository, NewAuditLog, NewProduct, PgAuditLogRepository, PgProductRepository,
     ProductPatch, ProductRepository,
@@ -16,9 +17,6 @@ use crate::repositories::{
 /// Teto alinhado às colunas `VARCHAR` do banco.
 const NAME_MAX: usize = 255;
 const SKU_MAX: usize = 64;
-/// Teto `DECIMAL(12,2)`: abaixo de 10^10 (escala ≤ 2).
-static MONEY_MAX: std::sync::LazyLock<Decimal> =
-    std::sync::LazyLock::new(|| Decimal::new(1_000_000_000_000, 2));
 
 pub struct CreateProductInput {
     pub name: String,
@@ -63,13 +61,10 @@ fn digits(value: &str, len: usize) -> bool {
     value.len() == len && value.bytes().all(|b| b.is_ascii_digit())
 }
 
+/// Dinheiro canônico: delega ao módulo único (`money.rs`) — mesma mensagem,
+/// mesmo domínio, mais normalização `rescale(2)` (ex: `10.5` → `10.50`).
 fn money(value: Decimal, field: &str) -> Result<Decimal, ProductError> {
-    if value < Decimal::ZERO || value >= *MONEY_MAX || value.scale() > 2 {
-        return Err(ProductError::Invalid(format!(
-            "{field} deve ser decimal ≥ 0 com até 2 casas"
-        )));
-    }
-    Ok(value)
+    canonical_money(value, field).map_err(ProductError::Invalid)
 }
 
 fn rate(value: Decimal, field: &str) -> Result<Decimal, ProductError> {

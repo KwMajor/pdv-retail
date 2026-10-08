@@ -14,6 +14,7 @@ pub mod errors;
 pub mod jwt;
 pub mod middleware;
 pub mod models;
+pub mod money;
 pub mod openapi;
 pub mod repositories;
 pub mod services;
