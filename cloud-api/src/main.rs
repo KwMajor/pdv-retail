@@ -21,7 +21,15 @@ async fn main() {
     // Não falha sem banco: /health responde sempre; /ready reflete o pool.
     // (dotenvy carrega .env local; em prod vêm do ambiente.)
     let _ = dotenvy::dotenv();
-    let cfg = Config::from_env();
+    // Config ausente/insegura = boot recusado (fail-fast sem panic: log + exit,
+    // mesmo padrão do JwtKeys abaixo). Nenhum `expect` no caminho do boot.
+    let cfg = match Config::from_env() {
+        Ok(cfg) => cfg,
+        Err(detail) => {
+            tracing::error!(detail = %detail, "configuração inválida, abortando boot");
+            std::process::exit(1);
+        }
+    };
 
     let pool = match PgPoolOptions::new()
         .max_connections(5)
@@ -63,11 +71,23 @@ async fn main() {
 
     let addr = SocketAddr::from(([0, 0, 0, 0], cfg.port));
     tracing::info!("ouvindo em {addr}");
-    let listener = tokio::net::TcpListener::bind(addr).await.expect("bind");
-    axum::serve(listener, app)
+    let listener = match tokio::net::TcpListener::bind(addr).await {
+        Ok(listener) => listener,
+        Err(e) => {
+            tracing::error!("falha ao abrir a porta {addr} (em uso ou sem permissão?): {e}");
+            std::process::exit(1);
+        }
+    };
+    match axum::serve(listener, app)
         .with_graceful_shutdown(shutdown_signal())
         .await
-        .expect("serve");
+    {
+        Ok(()) => {}
+        Err(e) => {
+            tracing::error!("servidor HTTP encerrou com erro: {e}");
+            std::process::exit(1);
+        }
+    }
 }
 
 async fn shutdown_signal() {
