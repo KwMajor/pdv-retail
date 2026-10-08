@@ -39,6 +39,16 @@ export function listProducts(q?: string): Promise<Product[]> {
   return api<Product[]>(`/api/v1/products${query}`);
 }
 
+/**
+ * Acha o produto pelo código de barras exato (US06 Task 6.2: o bip).
+ * Usa a busca textual da API (`q` cobre nome/sku/barcode, isolada por loja
+ * e só ativos) e filtra o match exato no cliente. `null` = não cadastrado.
+ */
+export async function findProductByBarcode(code: string): Promise<Product | null> {
+  const candidates = await listProducts(code);
+  return candidates.find((p) => p.barcode === code) ?? null;
+}
+
 export function createProduct(input: NewProduct): Promise<Product> {
   return api<Product>("/api/v1/products", {
     method: "POST",
