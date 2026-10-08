@@ -1,5 +1,7 @@
 # Rodando localmente
 
+*English version: [en/run-local.md](en/run-local.md).*
+
 ## Pré-requisitos (uma vez por máquina)
 
 Time 100% Linux (Mint/Ubuntu). Dois scripts idempotentes:

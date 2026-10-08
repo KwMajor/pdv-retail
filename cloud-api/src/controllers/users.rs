@@ -61,9 +61,9 @@ impl From<User> for UserResponse {
     tag = "sistema",
     security(("bearer" = [])),
     responses(
-        (status = 200, description = "Identidade do token (sem hashes)", body = UserResponse),
-        (status = 401, description = "Sem Bearer válido", body = ErrorBody),
-        (status = 404, description = "Usuário desativado/removido após emissão", body = ErrorBody),
+        (status = 200, description = "Token identity (no hashes)", body = UserResponse),
+        (status = 401, description = "Invalid or missing Bearer token", body = ErrorBody),
+        (status = 404, description = "User deactivated/removed after issuance", body = ErrorBody),
     ),
 )]
 pub async fn me_handler(
@@ -104,15 +104,15 @@ fn service_error(e: CreateUserError) -> AppError {
     security(("bearer" = [])),
     request_body(
         content = CreateUserRequest,
-        description = "Sem campo store_id: vale o tenant do token"
+        description = "No store_id field: the token tenant applies"
     ),
     responses(
-        (status = 201, description = "Funcionário criado (sem hashes)", body = UserResponse),
-        (status = 400, description = "Validação (nome/email/senha)", body = ErrorBody),
-        (status = 401, description = "Sem Bearer válido", body = ErrorBody),
-        (status = 403, description = "Caixa não cadastra (só gestão)", body = ErrorBody),
-        (status = 409, description = "Email já cadastrado na loja", body = ErrorBody),
-        (status = 422, description = "Role fora da lista (texto do Axum)", body = String),
+        (status = 201, description = "Employee created (no hashes)", body = UserResponse),
+        (status = 400, description = "Validation (name/email/password)", body = ErrorBody),
+        (status = 401, description = "Invalid or missing Bearer token", body = ErrorBody),
+        (status = 403, description = "Cashiers cannot create (managers only)", body = ErrorBody),
+        (status = 409, description = "Email already registered in the store", body = ErrorBody),
+        (status = 422, description = "Role outside the list (Axum plain text)", body = String),
     ),
 )]
 pub async fn create_user_handler(

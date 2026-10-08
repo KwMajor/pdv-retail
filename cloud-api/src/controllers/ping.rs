@@ -23,8 +23,8 @@ pub struct PingResponse {
     tag = "isolamento",
     security(("bearer" = [])),
     responses(
-        (status = 200, description = "Tenant identificado (eco do store_id)", body = PingResponse),
-        (status = 401, description = "Sem Bearer, token adulterado/expirado ou papel desconhecido", body = ErrorBody),
+        (status = 200, description = "Tenant identified (store_id echo)", body = PingResponse),
+        (status = 401, description = "Missing Bearer, tampered/expired token or unknown role", body = ErrorBody),
     ),
 )]
 pub async fn ping(ctx: TenantContext) -> Json<PingResponse> {

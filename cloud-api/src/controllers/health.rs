@@ -24,7 +24,7 @@ pub struct DegradedResponse {
     path = "/health",
     tag = "sistema",
     responses(
-        (status = 200, description = "Processo de pé", body = StatusResponse),
+        (status = 200, description = "Process alive", body = StatusResponse),
     ),
 )]
 pub async fn health() -> (StatusCode, Json<StatusResponse>) {
@@ -42,8 +42,8 @@ pub async fn health() -> (StatusCode, Json<StatusResponse>) {
     path = "/ready",
     tag = "sistema",
     responses(
-        (status = 200, description = "Banco alcançável", body = StatusResponse),
-        (status = 503, description = "Banco ausente/inacessível", body = DegradedResponse),
+        (status = 200, description = "Database reachable", body = StatusResponse),
+        (status = 503, description = "Database missing/unreachable", body = DegradedResponse),
     ),
 )]
 pub async fn ready(State(state): State<AppState>) -> (StatusCode, Json<serde_json::Value>) {
