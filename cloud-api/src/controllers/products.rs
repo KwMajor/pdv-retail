@@ -130,11 +130,11 @@ fn service_error(e: ProductError) -> AppError {
     security(("bearer" = [])),
     request_body(content = CreateProductRequest),
     responses(
-        (status = 201, description = "Produto criado", body = ProductResponse),
-        (status = 401, description = "Sem Bearer válido", body = ErrorBody),
-        (status = 403, description = "Caixa não cadastra (só gestão)", body = ErrorBody),
-        (status = 409, description = "SKU já cadastrado na loja", body = ErrorBody),
-        (status = 422, description = "Campo fora do domínio (NCM, preço, etc.)", body = ErrorBody),
+        (status = 201, description = "Product created", body = ProductResponse),
+        (status = 401, description = "Invalid or missing Bearer token", body = ErrorBody),
+        (status = 403, description = "Cashiers cannot create (managers only)", body = ErrorBody),
+        (status = 409, description = "SKU already registered in the store", body = ErrorBody),
+        (status = 422, description = "Field outside the domain (NCM, price, etc.)", body = ErrorBody),
     ),
 )]
 pub async fn create_product_handler(
@@ -172,8 +172,8 @@ pub async fn create_product_handler(
     security(("bearer" = [])),
     params(ListProductsQuery),
     responses(
-        (status = 200, description = "Só ativos da loja do token", body = [ProductResponse]),
-        (status = 401, description = "Sem Bearer válido", body = ErrorBody),
+        (status = 200, description = "Only active products of the token store", body = [ProductResponse]),
+        (status = 401, description = "Invalid or missing Bearer token", body = ErrorBody),
     ),
 )]
 pub async fn list_products_handler(
@@ -200,11 +200,11 @@ pub async fn list_products_handler(
     path = "/api/v1/products/{id}",
     tag = "produtos",
     security(("bearer" = [])),
-    params(("id" = Uuid, Path, description = "ID do produto")),
+    params(("id" = Uuid, Path, description = "Product ID")),
     responses(
-        (status = 200, description = "Produto da loja (mesmo inativo)", body = ProductResponse),
-        (status = 401, description = "Sem Bearer válido", body = ErrorBody),
-        (status = 404, description = "Inexistente ou de outra loja", body = ErrorBody),
+        (status = 200, description = "Store product (even if inactive)", body = ProductResponse),
+        (status = 401, description = "Invalid or missing Bearer token", body = ErrorBody),
+        (status = 404, description = "Not found or from another store", body = ErrorBody),
     ),
 )]
 pub async fn get_product_handler(
@@ -224,14 +224,14 @@ pub async fn get_product_handler(
     path = "/api/v1/products/{id}",
     tag = "produtos",
     security(("bearer" = [])),
-    params(("id" = Uuid, Path, description = "ID do produto")),
+    params(("id" = Uuid, Path, description = "Product ID")),
     request_body(content = UpdateProductRequest),
     responses(
-        (status = 200, description = "Produto atualizado", body = ProductResponse),
-        (status = 401, description = "Sem Bearer válido", body = ErrorBody),
-        (status = 403, description = "Caixa não edita (só gestão)", body = ErrorBody),
-        (status = 404, description = "Inexistente ou de outra loja", body = ErrorBody),
-        (status = 422, description = "Campo fora do domínio", body = ErrorBody),
+        (status = 200, description = "Product updated", body = ProductResponse),
+        (status = 401, description = "Invalid or missing Bearer token", body = ErrorBody),
+        (status = 403, description = "Cashiers cannot edit (managers only)", body = ErrorBody),
+        (status = 404, description = "Not found or from another store", body = ErrorBody),
+        (status = 422, description = "Field outside the domain", body = ErrorBody),
     ),
 )]
 pub async fn update_product_handler(
@@ -270,12 +270,12 @@ pub async fn update_product_handler(
     path = "/api/v1/products/{id}",
     tag = "produtos",
     security(("bearer" = [])),
-    params(("id" = Uuid, Path, description = "ID do produto")),
+    params(("id" = Uuid, Path, description = "Product ID")),
     responses(
-        (status = 200, description = "Soft delete aplicado (is_active=false)", body = ProductResponse),
-        (status = 401, description = "Sem Bearer válido", body = ErrorBody),
-        (status = 403, description = "Caixa não exclui (só gestão)", body = ErrorBody),
-        (status = 404, description = "Inexistente ou de outra loja", body = ErrorBody),
+        (status = 200, description = "Soft delete applied (is_active=false)", body = ProductResponse),
+        (status = 401, description = "Invalid or missing Bearer token", body = ErrorBody),
+        (status = 403, description = "Cashiers cannot delete (managers only)", body = ErrorBody),
+        (status = 404, description = "Not found or from another store", body = ErrorBody),
     ),
 )]
 pub async fn delete_product_handler(

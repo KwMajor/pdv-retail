@@ -35,11 +35,11 @@ pub struct LoginResponse {
     post,
     path = "/api/v1/auth/login",
     tag = "auth",
-    request_body(content = LoginRequest, description = "Tenant via header X-Store-ID (dica não autenticada)"),
+    request_body(content = LoginRequest, description = "Tenant via X-Store-ID header (unauthenticated hint)"),
     responses(
-        (status = 200, description = "JWT emitido (TTL 12h)", body = LoginResponse),
-        (status = 400, description = "Sem dica de loja (X-Store-ID)", body = ErrorBody),
-        (status = 401, description = "Credencial inválida (genérico, anti-enumeração)", body = ErrorBody),
+        (status = 200, description = "JWT issued (12h TTL)", body = LoginResponse),
+        (status = 400, description = "Missing store hint (X-Store-ID)", body = ErrorBody),
+        (status = 401, description = "Invalid credentials (generic, anti-enumeration)", body = ErrorBody),
     ),
 )]
 pub async fn login_handler(

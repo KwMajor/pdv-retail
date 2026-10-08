@@ -1,5 +1,7 @@
 # Testes
 
+*English version: [en/run-tests.md](en/run-tests.md).*
+
 ## Portão único (local = CI)
 
 ```bash

@@ -99,12 +99,12 @@ impl Modify for SecurityAddon {
     ),
     modifiers(&SecurityAddon),
     tags(
-        (name = "sistema", description = "Liveness, readiness e identidade"),
-        (name = "isolamento", description = "Prova de tenant autenticado"),
-        (name = "usuarios", description = "Gestão de funcionários (gestão)"),
-        (name = "auth", description = "Emissão de JWT"),
-        (name = "produtos", description = "Catálogo e parâmetros fiscais"),
-        (name = "estoque", description = "Ledger e ajustes (gestão)"),
+        (name = "sistema", description = "Liveness, readiness and identity"),
+        (name = "isolamento", description = "Authenticated tenant proof"),
+        (name = "usuarios", description = "Employee management (managers)"),
+        (name = "auth", description = "JWT issuance"),
+        (name = "produtos", description = "Catalog and fiscal parameters"),
+        (name = "estoque", description = "Ledger and adjustments (managers)"),
     ),
 )]
 pub struct ApiDoc;

@@ -1,5 +1,7 @@
 # Sistema PDV (Open Source, MIT)
 
+*Read in English: [README_EN.md](README_EN.md).*
+
 ## Sobre o Projeto
 Aplicativo multiplataforma open-source para operação de frente de caixa (PDV) e retaguarda gerencial. A solução foi desenhada no modelo Multi-Tenant (SaaS), permitindo que múltiplas lojas independentes utilizem a mesma infraestrutura de banco de dados e backend na nuvem com isolamento total de informações. O frontend roda nativamente no sistema operacional via Tauri, permitindo acesso direto ao hardware do lojista com consumo mínimo de recursos.
 
@@ -32,7 +34,7 @@ O sistema foi arquitetado visando alta performance, baixo consumo de recursos e 
 *   **Linguagem:** TypeScript (Apache 2.0).
 *   **Container Desktop:** Tauri (MIT / Apache 2.0) — Alternativa mais leve e segura ao Electron, utilizando o renderizador nativo do SO em vez de embutir um navegador inteiro.
 *   **Framework UI:** React.js (MIT) — Construção dos componentes visuais e regras de tela.
-*   **Estilização:** Tailwind CSS (MIT) e componentes headless como Radix UI (MIT) para construção de interface ágil e acessível.
+*   **Estilização:** Design tokens em CSS puro + componentes headless Radix UI (MIT) para construção de interface ágil e acessível.
 *   **Gerenciamento de Estado:** Zustand (MIT) — Controle do carrinho de compras e turnos do caixa em memória local.
 
 **Banco de Dados**

@@ -58,11 +58,11 @@ fn service_error(e: MovementError) -> AppError {
     security(("bearer" = [])),
     request_body(content = AdjustStockRequest),
     responses(
-        (status = 200, description = "Saldos resultantes (lote atômico)", body = [StockResponse]),
-        (status = 401, description = "Sem Bearer válido", body = ErrorBody),
-        (status = 403, description = "Só gestão ajusta estoque", body = ErrorBody),
-        (status = 404, description = "Produto inexistente ou de outra loja", body = ErrorBody),
-        (status = 422, description = "Lote vazio, delta inválido ou saldo negativo", body = ErrorBody),
+        (status = 200, description = "Resulting balances (atomic batch)", body = [StockResponse]),
+        (status = 401, description = "Invalid or missing Bearer token", body = ErrorBody),
+        (status = 403, description = "Managers only can adjust stock", body = ErrorBody),
+        (status = 404, description = "Missing product or from another store", body = ErrorBody),
+        (status = 422, description = "Empty batch, invalid delta or negative balance", body = ErrorBody),
     ),
 )]
 pub async fn adjust_stock_handler(
