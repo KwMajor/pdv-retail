@@ -43,6 +43,21 @@ export function centsToDecimal(cents: string): number {
   return (Number(digits === "" ? "0" : digits) / 100);
 }
 
+/**
+ * Decimal da API (string exata, ex: "27.99") → centavos inteiros (2799).
+ * SEM float no caminho: separa parte inteira/fracionária na string, então
+ * `0.1 + 0.2 !== 0.3` nunca nos atinge. Retorna `null` se fora do domínio
+ * (vazio, lixo, >2 casas, negativo, parte inteira > 10 dígitos = teto 10^10).
+ * O carrinho (US06) guarda centavos; o backend revalida na venda (US07).
+ */
+export function decimalStringToCents(value: string): number | null {
+  const v = value.trim();
+  const m = /^(\d{1,10})(?:\.(\d{1,2}))?$/.exec(v);
+  if (!m) return null;
+  const cents = Number(m[1]) * 100 + Number(`${m[2] ?? ""}00`.slice(0, 2));
+  return Number.isSafeInteger(cents) ? cents : null;
+}
+
 export function isValidNcm(digits: string): boolean {
   return digits.length === 8 && /^[0-9]{8}$/.test(digits);
 }

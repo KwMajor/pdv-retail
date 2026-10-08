@@ -7,6 +7,7 @@ import { describe, expect, it } from "vitest";
 import {
   barcodeError,
   centsToDecimal,
+  decimalStringToCents,
   fieldError,
   formatBRLFromCents,
   isValidBarcode,
@@ -44,6 +45,22 @@ describe("moeda BRL", () => {
     expect(centsToDecimal("2799")).toBe(27.99);
     expect(centsToDecimal("")).toBe(0);
     expect(formatBRLFromCents("2799")).toContain("27,99");
+  });
+
+  it("decimal da API → centavos exatos (US06, sem float)", () => {
+    expect(decimalStringToCents("27.99")).toBe(2799);
+    expect(decimalStringToCents("10")).toBe(1000);
+    expect(decimalStringToCents("10.5")).toBe(1050);
+    expect(decimalStringToCents("  0.10  ")).toBe(10);
+    expect(decimalStringToCents("0.00")).toBe(0);
+  });
+
+  it("rejeita fora do domínio com null", () => {
+    for (const bad of ["", "   ", "abc", "10.999", "-1.00", "12,34", "1.2.3", ".5"]) {
+      expect(decimalStringToCents(bad)).toBeNull();
+    }
+    // Acima do teto 10^10 do backend.
+    expect(decimalStringToCents("10000000000.00")).toBeNull();
   });
 });
 
