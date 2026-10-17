@@ -4,6 +4,7 @@
 //! `store_id` e usam prepared statements.
 
 pub mod product_service;
+pub mod sale_service;
 pub mod session_service;
 pub mod stock_service;
 pub mod user_service;

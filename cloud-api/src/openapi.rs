@@ -9,9 +9,10 @@
 use utoipa::openapi::security::{HttpAuthScheme, HttpBuilder, SecurityScheme};
 use utoipa::{Modify, OpenApi};
 
-use crate::controllers::{health, ping, products, session, stock, users};
+use crate::controllers::{health, ping, products, sales, session, stock, users};
 use crate::errors::ErrorBody;
 use crate::models::UserRole;
+use crate::services::sale_service::PaymentMethod;
 
 /// Caminhos da API.
 pub mod routes {
@@ -24,6 +25,7 @@ pub mod routes {
     pub const STOCK_ADJUST: &str = "/api/v1/stock/adjust";
     pub const PRODUCTS: &str = "/api/v1/products";
     pub const PRODUCT_BY_ID: &str = "/api/v1/products/{id}";
+    pub const SALES: &str = "/api/v1/sales";
     pub const OPENAPI_JSON: &str = "/api-docs/openapi.json";
     pub const DOCS_UI: &str = "/docs";
 
@@ -38,6 +40,7 @@ pub mod routes {
         PRODUCTS,
         PRODUCT_BY_ID,
         STOCK_ADJUST,
+        SALES,
     ];
 }
 
@@ -76,6 +79,7 @@ impl Modify for SecurityAddon {
         products::update_product_handler,
         products::delete_product_handler,
         stock::adjust_stock_handler,
+        sales::create_sale_handler,
     ),
     components(
         schemas(
@@ -93,6 +97,13 @@ impl Modify for SecurityAddon {
             stock::AdjustStockRequest,
             stock::AdjustStockItem,
             stock::StockResponse,
+            sales::CreateSaleRequest,
+            sales::CreateSaleItemRequest,
+            sales::CreateSalePaymentRequest,
+            sales::SaleResponse,
+            sales::SaleItemResponse,
+            sales::SalePaymentResponse,
+            PaymentMethod,
             UserRole,
             ErrorBody,
         )
@@ -105,6 +116,7 @@ impl Modify for SecurityAddon {
         (name = "auth", description = "JWT issuance"),
         (name = "produtos", description = "Catalog and fiscal parameters"),
         (name = "estoque", description = "Ledger and adjustments (managers)"),
+        (name = "vendas", description = "Sales closing with split payments"),
     ),
 )]
 pub struct ApiDoc;
