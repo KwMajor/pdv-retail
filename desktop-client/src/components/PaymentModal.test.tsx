@@ -1,11 +1,13 @@
 /**
- * Comportamento do PaymentModal (US07 Task 7.2): resumo Total/Pago/Falta,
- * botões rápidos, máscara BRL, trava da finalização e payload/erros.
+ * Comportamento do PaymentModal (US07 Task 7.2, US08 Task 8.1): resumo
+ * Total/Pago/Falta, botões rápidos, máscara BRL, troco em tempo real,
+ * trava da finalização e payload/erros.
  */
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { useCart, type CartItem } from "../stores/cart";
+import { useCheckout } from "../stores/checkout";
 import { PaymentModal } from "./PaymentModal";
 
 const SALE = {
@@ -54,6 +56,7 @@ function renderModal() {
 describe("PaymentModal", () => {
   beforeEach(() => {
     useCart.setState({ items: [] });
+    useCheckout.getState().reset();
     vi.unstubAllGlobals();
   });
 
@@ -64,6 +67,35 @@ describe("PaymentModal", () => {
     expect(amountOf("Pago até agora")).toBe("R$ 0,00");
     expect(amountOf("Falta Pagar")).toBe("R$ 20,00");
     expect(screen.getByRole("button", { name: /Finalizar venda/ })).toBeDisabled();
+  });
+
+  it("mostra o troco em tempo real ao digitar dinheiro acima da falta (DoD US08)", async () => {
+    const user = userEvent.setup();
+    seedCart();
+    renderModal();
+
+    // Antes de digitar, dinheiro selecionado → troco zerado visível.
+    expect(screen.getByRole("status")).toHaveTextContent(/Troco: R\$\s*0,00/);
+
+    await user.type(screen.getByLabelText(/Valor recebido/), "5000");
+    // Falta R$ 20,00 + digitou R$ 50,00 → troco R$ 30,00 IMEDIATAMENTE,
+    // ainda sem "Adicionar pagamento" (a compra segue com a falta de 20).
+    expect(screen.getByRole("status")).toHaveTextContent(/Troco: R\$\s*30,00/);
+    expect(amountOf("Falta Pagar")).toBe("R$ 20,00");
+  });
+
+  it("mostra Troco R$ 0,00 no valor exato (edge case US08)", async () => {
+    const user = userEvent.setup();
+    seedCart();
+    renderModal();
+
+    await user.type(screen.getByLabelText(/Valor recebido/), "2000");
+    expect(screen.getByRole("status")).toHaveTextContent(/Troco: R\$\s*0,00/);
+    await user.click(screen.getByRole("button", { name: /Adicionar pagamento/ }));
+    expect(
+      screen.getByRole("button", { name: /Finalizar venda/ }),
+    ).toBeEnabled();
+    expect(screen.getByRole("status")).toHaveTextContent(/Troco: R\$\s*0,00/);
   });
 
   it("adiciona PIX parcial e recalcula a falta", async () => {
