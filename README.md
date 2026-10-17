@@ -52,7 +52,7 @@ Documentação de execução e testes: `docs/run-local.md`, `docs/run-tests.md`,
 ## Funcionalidades
 * **Multi-tenancy e segurança:** JWT com papéis (Gerente/Caixa) e isolamento por loja.
 * **Catálogo e estoque:** produtos com NCM/CEST/CFOP, auditoria de preço e ledger de estoque imutável.
-* **Frente de caixa (em evolução):** carrinho com leitor de código de barras, fechamento com pagamento fracionado (dinheiro/PIX/crédito/débito), troco e baixa de estoque atômica; orçamentos no roadmap.
+* **Frente de caixa (em evolução):** carrinho com leitor de código de barras, fechamento com pagamento fracionado (dinheiro/PIX/crédito/débito) com troco calculado em tempo real e baixa de estoque atômica; orçamentos no roadmap.
 * **Fiscal e tesouraria (planejado):** NFC-e/SEFAZ, impressão térmica, turnos de caixa, fiado, dashboard. Ver Roadmap abaixo.
 
 ## Roadmap resumido

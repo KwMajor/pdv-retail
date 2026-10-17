@@ -6,6 +6,7 @@ import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { useCart, type CartItem } from "../stores/cart";
+import { useCheckout } from "../stores/checkout";
 import { PosScreen } from "./PosScreen";
 
 function seedCart(items: Array<Partial<CartItem>>) {
@@ -33,6 +34,7 @@ function seedCart(items: Array<Partial<CartItem>>) {
 describe("PosScreen", () => {
   beforeEach(() => {
     useCart.setState({ items: [] });
+    useCheckout.getState().reset();
     vi.unstubAllGlobals();
   });
 
