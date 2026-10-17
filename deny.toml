@@ -13,6 +13,14 @@ ignore = [
   # preso ao axum 0.7) e sem upgrade seguro (RUSTSEC diz "no safe upgrade").
   # Risco prático baixo; reavaliar ao subir para axum 0.8.
   { id = "RUSTSEC-2024-0370", reason = "build-time only, sem upgrade seguro no axum 0.7" },
+  # zip 1.x (via build-dep do utoipa-swagger-ui 7): fixes exigem zip >= 9 e
+  # nenhuma release do utoipa-swagger-ui (até a 10.0.1) aceita zip >= 9 ainda.
+  # O zip só roda no build.rs extraindo o archive swagger-ui EMBUTIDO no crate
+  # (confiável, pinado no Cargo.lock) — sem input não-confiável e fora do
+  # binário final. Reavaliar quando o utoipa-swagger-ui permitir zip >= 9.
+  { id = "RUSTSEC-2026-0367", reason = "build-time only, archive embutido confiável, sem release upstream compatível" },
+  { id = "RUSTSEC-2026-0368", reason = "build-time only, archive embutido confiável, sem release upstream compatível" },
+  { id = "RUSTSEC-2026-0369", reason = "build-time only, archive embutido confiável, sem release upstream compatível" },
 ]
 
 [licenses]
