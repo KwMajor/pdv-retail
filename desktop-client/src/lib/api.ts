@@ -33,7 +33,16 @@ export async function api<T>(path: string, init: RequestInit = {}): Promise<T> {
     inMemoryToken = null;
   }
   if (!res.ok) {
-    throw new Error(`API ${res.status} em ${path}`);
+    // `ErrorBody` da API ({ code, message }): mostra a mensagem de domínio
+    // ("estoque insuficiente…") sem nunca inventar detalhe local.
+    const body = (await res.json().catch(() => null)) as {
+      message?: unknown;
+    } | null;
+    const message =
+      typeof body?.message === "string"
+        ? body.message
+        : `API ${res.status} em ${path}`;
+    throw new Error(message);
   }
   return (await res.json()) as T;
 }
