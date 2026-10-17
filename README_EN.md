@@ -52,12 +52,12 @@ Run and test docs: `docs/en/run-local.md`, `docs/en/run-tests.md`, `docs/en/env.
 ## Features
 * **Multi-tenancy and security:** JWT with roles (Manager/Cashier) and per-store isolation.
 * **Catalog and stock:** products with NCM/CEST/CFOP, price audit and immutable stock ledger.
-* **Checkout (evolving):** cart, split payments, change, quotes.
+* **Checkout (evolving):** cart with barcode scanner, closing with split payments (cash/PIX/credit/debit), change and atomic stock debit; quotes on the roadmap.
 * **Fiscal and treasury (planned):** NFC-e/SEFAZ, thermal printing, cashier shifts, store credit, dashboard. See Roadmap below.
 
 ## Abridged Roadmap
-* **Done:** multi-tenant foundation, auth and profiles, desktop credential vault, fiscal catalog, stock engine, OpenAPI/Swagger docs, CI with supply chain and Semgrep.
-* **Planned:** full checkout, fiscal engine (NFC-e, offline contingency), treasury (shifts, cash drops, store credit) and financial dashboard.
+* **Done:** multi-tenant foundation, auth and profiles, desktop credential vault, fiscal catalog, stock engine, cart with barcode scanning, split-payment sales, OpenAPI/Swagger docs, CI with supply chain and Semgrep.
+* **Planned:** fiscal engine (NFC-e, offline contingency), treasury (shifts, cash drops, store credit) and financial dashboard.
 
 ---
 

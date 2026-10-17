@@ -22,6 +22,13 @@ pub struct NewSale {
 
 pub trait SaleRepository {
     async fn create(&self, input: NewSale) -> Result<Sale, sqlx::Error>;
+    /// Inserção dentro de transação (fechamento US07: venda + itens +
+    /// pagamentos + estoque falham juntos ou nada persiste).
+    async fn create_tx(
+        &self,
+        tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
+        input: NewSale,
+    ) -> Result<Sale, sqlx::Error>;
     async fn find_by_id(&self, store_id: Uuid, id: Uuid) -> Result<Option<Sale>, sqlx::Error>;
     async fn list_by_store(&self, store_id: Uuid, limit: i64) -> Result<Vec<Sale>, sqlx::Error>;
     /// Transição de status (ex: `cancelled`). Venda nunca é apagada.
@@ -58,6 +65,30 @@ impl SaleRepository for PgSaleRepository {
             input.created_by,
         )
         .fetch_one(&self.pool)
+        .await
+    }
+
+    async fn create_tx(
+        &self,
+        tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
+        input: NewSale,
+    ) -> Result<Sale, sqlx::Error> {
+        sqlx::query_as!(
+            Sale,
+            "INSERT INTO sale(store_id, customer_id, anonymous_cpf_cnpj, status, subtotal, discount, total, change_amount, created_by)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+             RETURNING id, store_id, customer_id, anonymous_cpf_cnpj, status, subtotal, discount, total, change_amount, created_by, created_at",
+            input.store_id,
+            input.customer_id,
+            input.anonymous_cpf_cnpj,
+            input.status,
+            input.subtotal,
+            input.discount,
+            input.total,
+            input.change_amount,
+            input.created_by,
+        )
+        .fetch_one(&mut **tx)
         .await
     }
 

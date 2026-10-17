@@ -55,6 +55,7 @@ pub fn app_router(state: AppState) -> Router {
             routes::STOCK_ADJUST,
             post(controllers::stock::adjust_stock_handler),
         )
+        .route(routes::SALES, post(controllers::sales::create_sale_handler))
         .route(
             routes::PRODUCTS,
             post(controllers::products::create_product_handler)

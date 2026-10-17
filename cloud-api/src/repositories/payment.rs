@@ -19,6 +19,12 @@ pub struct NewPayment {
 
 pub trait PaymentRepository {
     async fn create(&self, input: NewPayment) -> Result<Payment, sqlx::Error>;
+    /// Inserção dentro de transação (fechamento US07: tudo-ou-nada).
+    async fn create_tx(
+        &self,
+        tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
+        input: NewPayment,
+    ) -> Result<Payment, sqlx::Error>;
     async fn find_by_id(&self, store_id: Uuid, id: Uuid) -> Result<Option<Payment>, sqlx::Error>;
     async fn list_by_sale(
         &self,
@@ -52,6 +58,26 @@ impl PaymentRepository for PgPaymentRepository {
             input.tendered_amount,
         )
         .fetch_one(&self.pool)
+        .await
+    }
+
+    async fn create_tx(
+        &self,
+        tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
+        input: NewPayment,
+    ) -> Result<Payment, sqlx::Error> {
+        sqlx::query_as!(
+            Payment,
+            "INSERT INTO payment(store_id, sale_id, method, amount, tendered_amount)
+             VALUES ($1, $2, $3, $4, $5)
+             RETURNING id, store_id, sale_id, method, amount, tendered_amount, created_at",
+            input.store_id,
+            input.sale_id,
+            input.method,
+            input.amount,
+            input.tendered_amount,
+        )
+        .fetch_one(&mut **tx)
         .await
     }
 

@@ -1,14 +1,15 @@
 /**
  * Shell mínimo do PDV (US02 Task 2.3).
  *
- * Navegação com cadeado visual por papel: "Vendas" para todos, "Produtos" e
- * "Relatórios" só gestão, "Configurações" só admin. Telas cheias chegam nas
- * USs próprias (caixa US06+, relatórios US17); aqui o contrato de RBAC já vale.
+ * Navegação com cadeado visual por papel: "Vendas" para todos (frente de
+ * caixa US06/US07), "Produtos" e "Relatórios" só gestão, "Configurações"
+ * só admin. Relatórios chegam na US17; aqui o contrato de RBAC já vale.
  */
 
 import { useEffect, useState } from "react";
 import { useSession } from "./stores/session";
 import { LoginForm } from "./components/LoginForm";
+import { PosScreen } from "./components/PosScreen";
 import { RoleGate } from "./components/RoleGate";
 import { ProductForm } from "./components/ProductForm";
 import { ADMIN_ROLES, MANAGERIAL_ROLES } from "./auth/roles";
@@ -53,7 +54,7 @@ export function App() {
         </button>
       </header>
       <main>
-        {screen === "vendas" && <p>Frente de caixa (US06+).</p>}
+        {screen === "vendas" && <PosScreen />}
         {screen === "produtos" && (
           <RoleGate allowed={MANAGERIAL_ROLES}>
             <ProductForm onCreated={() => setScreen("produtos")} />

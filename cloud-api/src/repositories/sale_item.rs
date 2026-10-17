@@ -29,6 +29,12 @@ pub struct NewSaleItem {
 
 pub trait SaleItemRepository {
     async fn create(&self, input: NewSaleItem) -> Result<SaleItem, sqlx::Error>;
+    /// Inserção dentro de transação (fechamento US07: tudo-ou-nada).
+    async fn create_tx(
+        &self,
+        tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
+        input: NewSaleItem,
+    ) -> Result<SaleItem, sqlx::Error>;
     async fn find_by_id(&self, store_id: Uuid, id: Uuid) -> Result<Option<SaleItem>, sqlx::Error>;
     async fn list_by_sale(
         &self,
@@ -70,6 +76,34 @@ impl SaleItemRepository for PgSaleItemRepository {
             input.icms_rate,
         )
         .fetch_one(&self.pool)
+        .await
+    }
+
+    async fn create_tx(
+        &self,
+        tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
+        input: NewSaleItem,
+    ) -> Result<SaleItem, sqlx::Error> {
+        sqlx::query_as!(
+            SaleItem,
+            "INSERT INTO sale_item(store_id, sale_id, product_id, quantity, unit_price, unit_cost_price, discount, total, ncm_code, cest, cfop, icms_origin, icms_rate)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+             RETURNING id, store_id, sale_id, product_id, quantity, unit_price, unit_cost_price, discount, total, ncm_code, cest, cfop, icms_origin, icms_rate",
+            input.store_id,
+            input.sale_id,
+            input.product_id,
+            input.quantity,
+            input.unit_price,
+            input.unit_cost_price,
+            input.discount,
+            input.total,
+            input.ncm_code,
+            input.cest,
+            input.cfop,
+            input.icms_origin,
+            input.icms_rate,
+        )
+        .fetch_one(&mut **tx)
         .await
     }
 
