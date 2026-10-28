@@ -34,7 +34,7 @@ O sistema foi arquitetado visando alta performance, baixo consumo de recursos e 
 *   **Linguagem:** TypeScript (Apache 2.0).
 *   **Container Desktop:** Tauri (MIT / Apache 2.0) — Alternativa mais leve e segura ao Electron, utilizando o renderizador nativo do SO em vez de embutir um navegador inteiro.
 *   **Framework UI:** React.js (MIT) — Construção dos componentes visuais e regras de tela.
-*   **Estilização:** Design tokens em CSS puro + componentes headless Radix UI (MIT) para construção de interface ágil e acessível.
+*   **Estilização:** Design tokens em CSS (fonte da verdade) + Tailwind CSS v4 (em adoção na US-22) + componentes headless Radix UI (MIT) para construção de interface ágil e acessível.
 *   **Gerenciamento de Estado:** Zustand (MIT) — Controle do carrinho de compras e turnos do caixa em memória local.
 
 **Banco de Dados**
@@ -49,17 +49,19 @@ Pré-requisitos e instalação: `./scripts/setup-dev.sh` (detalhes em `docs/`).
 ```
 Documentação de execução e testes: `docs/run-local.md`, `docs/run-tests.md`, `docs/env.md`.
 Certificado digital A1 (upload seguro): `docs/fiscal.md`.
+UI/UX e whitelabel (especificação): `docs/ui-ux.md`, `docs/whitelabel.md`.
 
 ## Funcionalidades
 * **Multi-tenancy e segurança:** JWT com papéis (Gerente/Caixa) e isolamento por loja.
 * **Catálogo e estoque:** produtos com NCM/CEST/CFOP, auditoria de preço e ledger de estoque imutável.
 * **Frente de caixa (em evolução):** carrinho com leitor de código de barras, fechamento com pagamento fracionado (dinheiro/PIX/crédito/débito) com troco calculado em tempo real e baixa de estoque atômica; orçamentos no roadmap.
 * **Certificado digital A1:** upload exclusivo do DONO com validação real do PKCS#12 e senha/PFX cifrados em repouso (AES-256-GCM); tela no desktop fica para a US10.
+* **UI/UX e whitelabel (planejado):** design system acessível e teclado-first, com marca da loja em runtime (logo, nome, preset e destaque) sem desenvolvedor. Ver `docs/ui-ux.md` e `docs/whitelabel.md`.
 * **Fiscal e tesouraria (planejado):** NFC-e/SEFAZ, impressão térmica, turnos de caixa, fiado, dashboard. Ver Roadmap abaixo.
 
 ## Roadmap resumido
 * **Pronto:** fundação multi-tenant, autenticação e perfis, cofre de credenciais no desktop, catálogo com fiscal, motor de estoque, carrinho com código de barras, venda com pagamento fracionado, certificado digital A1, documentação OpenAPI/Swagger, CI com supply chain e Semgrep.
-* **Planejado:** motor fiscal (NFC-e, contingência offline), tesouraria (turnos, sangria, fiado) e dashboard financeiro.
+* **Planejado:** UI/UX e whitelabel (US-22/US-23), motor fiscal (NFC-e, contingência offline), tesouraria (turnos, sangria, fiado) e dashboard financeiro.
 
 ---
 
