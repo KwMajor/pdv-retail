@@ -2603,6 +2603,7 @@ dependencies = [
  "keyring",
  "serde",
  "tauri",
+ "tauri-build",
  "thiserror 2.0.21",
 ]
 

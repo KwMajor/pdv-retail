@@ -12,6 +12,7 @@ target/
 node_modules/
 dist/
 src-tauri/target/
+desktop-client/src-tauri/gen/
 
 # SO / editores
 .DS_Store
