@@ -34,7 +34,7 @@ The system is architected for high performance, low resource usage, and permissi
 *   **Language:** TypeScript (Apache 2.0).
 *   **Desktop Container:** Tauri (MIT / Apache 2.0) — Lighter, safer alternative to Electron, using the OS native renderer instead of embedding a whole browser.
 *   **UI Framework:** React.js (MIT) — Visual components and screen rules.
-*   **Styling:** Design tokens in plain CSS + headless Radix UI components (MIT) for agile, accessible UI.
+*   **Styling:** Design tokens in CSS (source of truth) + Tailwind CSS v4 (being adopted in US-22) + headless Radix UI components (MIT) for agile, accessible UI.
 *   **State Management:** Zustand (MIT) — Shopping cart and cashier shift control in local memory.
 
 **Database**
@@ -49,17 +49,19 @@ Prerequisites and install: `./scripts/setup-dev.sh` (details in `docs/en/`).
 ```
 Run and test docs: `docs/en/run-local.md`, `docs/en/run-tests.md`, `docs/en/env.md`.
 A1 digital certificate (secure upload): `docs/en/fiscal.md`.
+UI/UX and whitelabel (specification): `docs/en/ui-ux.md`, `docs/en/whitelabel.md`.
 
 ## Features
 * **Multi-tenancy and security:** JWT with roles (Manager/Cashier) and per-store isolation.
 * **Catalog and stock:** products with NCM/CEST/CFOP, price audit and immutable stock ledger.
 * **Checkout (evolving):** cart with barcode scanner, closing with split payments (cash/PIX/credit/debit) with real-time change and atomic stock debit; quotes on the roadmap.
 * **A1 digital certificate:** OWNER-only upload with real PKCS#12 validation and password/PFX encrypted at rest (AES-256-GCM); desktop screen deferred to US10.
+* **UI/UX and whitelabel (planned):** accessible, keyboard-first design system with store brand at runtime (logo, name, preset and accent) without a developer. See `docs/en/ui-ux.md` and `docs/en/whitelabel.md`.
 * **Fiscal and treasury (planned):** NFC-e/SEFAZ, thermal printing, cashier shifts, store credit, dashboard. See Roadmap below.
 
 ## Abridged Roadmap
 * **Done:** multi-tenant foundation, auth and profiles, desktop credential vault, fiscal catalog, stock engine, cart with barcode scanning, split-payment sales, A1 digital certificate, OpenAPI/Swagger docs, CI with supply chain and Semgrep.
-* **Planned:** fiscal engine (NFC-e, offline contingency), treasury (shifts, cash drops, store credit) and financial dashboard.
+* **Planned:** UI/UX and whitelabel (US-22/US-23), fiscal engine (NFC-e, offline contingency), treasury (shifts, cash drops, store credit) and financial dashboard.
 
 ---
 
