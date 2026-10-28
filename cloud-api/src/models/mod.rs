@@ -17,6 +17,7 @@ pub mod sale;
 pub mod sale_item;
 pub mod stock;
 pub mod stock_movement;
+pub mod store_certificate;
 pub mod store_settings;
 pub mod user;
 
@@ -29,5 +30,6 @@ pub use sale::Sale;
 pub use sale_item::SaleItem;
 pub use stock::Stock;
 pub use stock_movement::StockMovement;
+pub use store_certificate::StoreCertificate;
 pub use store_settings::StoreSettings;
 pub use user::{User, UserRole};

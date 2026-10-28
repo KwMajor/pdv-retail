@@ -48,6 +48,7 @@ mod tests {
             pool: None,
             jwt: JwtKeys::from_secret("test-only-secret-com-mais-de-32-chars").unwrap(),
             expose_docs: false,
+            cert_master_key: [7u8; 32],
         }
     }
 

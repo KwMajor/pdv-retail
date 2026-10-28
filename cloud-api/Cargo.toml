@@ -36,6 +36,15 @@ argon2 = "0.5"
 # Salt aleatório do Argon2 (mesma versão que o password-hash usa: 0.6)
 rand_core = { version = "0.6", features = ["getrandom"] }
 jsonwebtoken = "9"
+# Certificado digital A1 (US09): valida PKCS#12 via OpenSSL (Apache-2.0).
+# Reaproveitado na assinatura XML do motor fiscal (US10).
+openssl = "0.10"
+# Cifra em repouso dos segredos do certificado (AES-256-GCM, MIT/Apache-2.0)
+aes-gcm = "0.10"
+# Payload .pfx e chave mestra em base64 (MIT/Apache-2.0)
+base64 = "0.22"
+# Zera buffers de senha em memória após uso (MIT/Apache-2.0)
+zeroize = "1"
 
 [dev-dependencies]
 tower = { version = "0.4", features = ["util"] }

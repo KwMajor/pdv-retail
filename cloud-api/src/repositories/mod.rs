@@ -35,6 +35,7 @@ pub mod sale;
 pub mod sale_item;
 pub mod stock;
 pub mod stock_movement;
+pub mod store_certificate;
 pub mod store_settings;
 pub mod user;
 
@@ -47,5 +48,8 @@ pub use sale::{NewSale, PgSaleRepository, SaleRepository};
 pub use sale_item::{NewSaleItem, PgSaleItemRepository, SaleItemRepository};
 pub use stock::{PgStockRepository, StockRepository, UpsertStock};
 pub use stock_movement::{NewStockMovement, PgStockMovementRepository, StockMovementRepository};
+pub use store_certificate::{
+    PgStoreCertificateRepository, StoreCertificateRepository, UpsertStoreCertificate,
+};
 pub use store_settings::{NewStoreSettings, PgStoreSettingsRepository, StoreSettingsRepository};
 pub use user::{NewUser, PgUserRepository, UserRepository};

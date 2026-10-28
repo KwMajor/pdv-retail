@@ -8,6 +8,7 @@
 // 11 traits sem ganho. Supressão consciente e documentada.
 #![allow(async_fn_in_trait)]
 
+pub mod certificate_cipher;
 pub mod config;
 pub mod controllers;
 pub mod errors;
@@ -21,6 +22,7 @@ pub mod services;
 
 use axum::{
     Router,
+    extract::DefaultBodyLimit,
     routing::{get, post},
 };
 use sqlx::PgPool;
@@ -37,6 +39,8 @@ pub struct AppState {
     pub jwt: JwtKeys,
     /// Docs OpenAPI expostas? Só dev/teste — NUNCA produção (Task 2.5).
     pub expose_docs: bool,
+    /// Chave mestra AES-256 que cifra senha/PFX do certificado A1 (US09).
+    pub cert_master_key: [u8; 32],
 }
 
 /// Router único do binário e dos testes (sem subir socket real).
@@ -56,6 +60,13 @@ pub fn app_router(state: AppState) -> Router {
             post(controllers::stock::adjust_stock_handler),
         )
         .route(routes::SALES, post(controllers::sales::create_sale_handler))
+        // Upload aceita .pfx de até 5 MB (base64 ~6,99 MB): limite local de 8 MiB.
+        .route(
+            routes::STORE_CERTIFICATE,
+            post(controllers::certificate::upload_certificate_handler)
+                .get(controllers::certificate::get_certificate_handler)
+                .layer(DefaultBodyLimit::max(8 * 1024 * 1024)),
+        )
         .route(
             routes::PRODUCTS,
             post(controllers::products::create_product_handler)

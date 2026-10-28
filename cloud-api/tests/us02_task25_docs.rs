@@ -19,6 +19,7 @@ fn app(expose_docs: bool) -> axum::Router {
         pool: None,
         jwt: JwtKeys::from_secret(TEST_SECRET).unwrap(),
         expose_docs,
+        cert_master_key: [7u8; 32],
     })
 }
 

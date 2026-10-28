@@ -1,3 +1,4 @@
+pub mod certificate;
 pub mod health;
 pub mod ping;
 pub mod products;

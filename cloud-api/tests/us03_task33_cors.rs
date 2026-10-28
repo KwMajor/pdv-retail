@@ -18,6 +18,7 @@ fn app() -> axum::Router {
         pool: None,
         jwt: keys(),
         expose_docs: false,
+        cert_master_key: [7u8; 32],
     })
 }
 

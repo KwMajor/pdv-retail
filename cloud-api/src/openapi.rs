@@ -9,7 +9,7 @@
 use utoipa::openapi::security::{HttpAuthScheme, HttpBuilder, SecurityScheme};
 use utoipa::{Modify, OpenApi};
 
-use crate::controllers::{health, ping, products, sales, session, stock, users};
+use crate::controllers::{certificate, health, ping, products, sales, session, stock, users};
 use crate::errors::ErrorBody;
 use crate::models::UserRole;
 use crate::services::sale_service::PaymentMethod;
@@ -26,6 +26,7 @@ pub mod routes {
     pub const PRODUCTS: &str = "/api/v1/products";
     pub const PRODUCT_BY_ID: &str = "/api/v1/products/{id}";
     pub const SALES: &str = "/api/v1/sales";
+    pub const STORE_CERTIFICATE: &str = "/api/v1/store/certificate";
     pub const OPENAPI_JSON: &str = "/api-docs/openapi.json";
     pub const DOCS_UI: &str = "/docs";
 
@@ -41,6 +42,7 @@ pub mod routes {
         PRODUCT_BY_ID,
         STOCK_ADJUST,
         SALES,
+        STORE_CERTIFICATE,
     ];
 }
 
@@ -80,6 +82,8 @@ impl Modify for SecurityAddon {
         products::delete_product_handler,
         stock::adjust_stock_handler,
         sales::create_sale_handler,
+        certificate::upload_certificate_handler,
+        certificate::get_certificate_handler,
     ),
     components(
         schemas(
@@ -103,6 +107,8 @@ impl Modify for SecurityAddon {
             sales::SaleResponse,
             sales::SaleItemResponse,
             sales::SalePaymentResponse,
+            certificate::UploadCertificateRequest,
+            certificate::CertificateResponse,
             PaymentMethod,
             UserRole,
             ErrorBody,
@@ -117,6 +123,7 @@ impl Modify for SecurityAddon {
         (name = "produtos", description = "Catalog and fiscal parameters"),
         (name = "estoque", description = "Ledger and adjustments (managers)"),
         (name = "vendas", description = "Sales closing with split payments"),
+        (name = "fiscal", description = "Digital certificate A1 (admin only)"),
     ),
 )]
 pub struct ApiDoc;
