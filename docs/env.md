@@ -11,6 +11,7 @@ Todas têm default de desenvolvimento; produção exige valores próprios
 | `DATABASE_URL` | `postgres://pdv:pdv@localhost:5432/pdv` | API, sqlx, testes | Banco de desenvolvimento |
 | `TEST_DATABASE_URL` | `.../pdv_test` | suíte (`cargo test`) | Banco dos testes automatizados |
 | `JWT_SECRET` | `dev-only-...` (inseguro) | API | HMAC do JWT — mínimo 32 chars; boot aborta se fraco; **ausente com `APP_ENV=production` (ou ausente) = boot recusado**; fallback inseguro só em `development`/`test` |
+| `CERT_MASTER_KEY` | `dev-only-...` (inseguro, 32 bytes base64) | API | Chave mestra AES-256 que cifra senha/PFX do certificado A1 (US09); **ausente/inválida com `APP_ENV=production` (ou ausente) = boot recusado**; fallback inseguro só em `development`/`test` |
 | `APP_ENV` | `production` (fail-closed) | API | `development`/`test` ligam Swagger UI |
 | `CORS_ORIGINS` | — (lista dev) | API | Origens extras liberadas no CORS além do padrão (localhost:1420, esquemas Tauri) |
 | `PORT` | `3000` | API | Porta HTTP da Cloud API |

@@ -42,6 +42,12 @@ impl TenantContext {
     pub fn require_manager(&self) -> Result<(), AppError> {
         self.require_roles(&[UserRole::Admin, UserRole::Manager])
     }
+
+    /// Atalho: `admin` (DONO) — certificado digital e configuração fiscal
+    /// (US09). Gerente/caixa não pode ver nem trocar segredos da empresa.
+    pub fn require_admin(&self) -> Result<(), AppError> {
+        self.require_roles(&[UserRole::Admin])
+    }
 }
 
 #[async_trait::async_trait]
@@ -99,6 +105,7 @@ mod tests {
             pool: None,
             jwt: keys(),
             expose_docs: false,
+            cert_master_key: [7u8; 32],
         }
     }
 

@@ -48,15 +48,17 @@ Prerequisites and install: `./scripts/setup-dev.sh` (details in `docs/en/`).
 ./scripts/run-all.sh   # postgres + API (:3000) + web (:1420)
 ```
 Run and test docs: `docs/en/run-local.md`, `docs/en/run-tests.md`, `docs/en/env.md`.
+A1 digital certificate (secure upload): `docs/en/fiscal.md`.
 
 ## Features
 * **Multi-tenancy and security:** JWT with roles (Manager/Cashier) and per-store isolation.
 * **Catalog and stock:** products with NCM/CEST/CFOP, price audit and immutable stock ledger.
 * **Checkout (evolving):** cart with barcode scanner, closing with split payments (cash/PIX/credit/debit) with real-time change and atomic stock debit; quotes on the roadmap.
+* **A1 digital certificate:** OWNER-only upload with real PKCS#12 validation and password/PFX encrypted at rest (AES-256-GCM); desktop screen deferred to US10.
 * **Fiscal and treasury (planned):** NFC-e/SEFAZ, thermal printing, cashier shifts, store credit, dashboard. See Roadmap below.
 
 ## Abridged Roadmap
-* **Done:** multi-tenant foundation, auth and profiles, desktop credential vault, fiscal catalog, stock engine, cart with barcode scanning, split-payment sales, OpenAPI/Swagger docs, CI with supply chain and Semgrep.
+* **Done:** multi-tenant foundation, auth and profiles, desktop credential vault, fiscal catalog, stock engine, cart with barcode scanning, split-payment sales, A1 digital certificate, OpenAPI/Swagger docs, CI with supply chain and Semgrep.
 * **Planned:** fiscal engine (NFC-e, offline contingency), treasury (shifts, cash drops, store credit) and financial dashboard.
 
 ---

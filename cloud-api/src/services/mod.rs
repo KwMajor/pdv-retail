@@ -3,6 +3,7 @@
 //! Services nunca montam SQL: delegam aos repositórios, que já exigem
 //! `store_id` e usam prepared statements.
 
+pub mod certificate_service;
 pub mod product_service;
 pub mod sale_service;
 pub mod session_service;

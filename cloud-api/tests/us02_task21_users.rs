@@ -104,6 +104,7 @@ fn app_with_db(p: sqlx::PgPool) -> axum::Router {
         pool: Some(p),
         jwt: JwtKeys::from_secret(TEST_SECRET).unwrap(),
         expose_docs: true,
+        cert_master_key: [7u8; 32],
     })
 }
 

@@ -66,6 +66,7 @@ async fn main() {
         pool,
         jwt,
         expose_docs,
+        cert_master_key: cfg.cert_master_key,
     };
     let app = app_router(state);
 
@@ -131,6 +132,7 @@ mod tests {
             pool,
             jwt: JwtKeys::from_secret("test-only-secret-com-mais-de-32-chars").unwrap(),
             expose_docs: false,
+            cert_master_key: [7u8; 32],
         }
     }
 
